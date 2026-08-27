@@ -79,8 +79,6 @@ def export_desc():
     for t in TRAPS:
         descs.append({"type": "trap", "center": t["center"], "extents": t["extents"], "rz": t["rz"], "color": "#f08c0a"})
     for f in FURN:
-        if f["type"] in ("window", "door"):
-            continue
         descs.append({"type": f["type"], "center": f["center"], "extents": f["extents"], "rz": f["rz"], "color": f["color"]})
     for s in SHELL:
         descs.append({"type": "wall", "center": s["center"], "extents": s["extents"], "rz": s["rz"], "color": s["color"]})

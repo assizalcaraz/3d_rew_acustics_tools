@@ -360,6 +360,36 @@
   "color": "#cfcfcf"
  },
  {
+  "type": "window",
+  "center": [
+   1.7,
+   2.985,
+   1.5
+  ],
+  "extents": [
+   1.2,
+   0.02,
+   1.2
+  ],
+  "rz": 0.0,
+  "color": "#74b6d4"
+ },
+ {
+  "type": "door",
+  "center": [
+   0.55,
+   0.015,
+   1.0
+  ],
+  "extents": [
+   0.8,
+   0.02,
+   2.0
+  ],
+  "rz": 0.0,
+  "color": "#b58b52"
+ },
+ {
   "type": "wall",
   "center": [
    1.6,
