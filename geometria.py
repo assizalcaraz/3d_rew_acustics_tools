@@ -44,10 +44,17 @@ for (cx, cy, rz), (mx, my) in zip(corners, centers):
     add_trap([mx, my, 1.95], rz)
 
 FURN = [
-    {"type": "desk", "center": [L - 0.35, 1.5, 0.38], "extents": [0.55, 1.6, 0.76], "rz": 0.0, "color": "#b7b7b7"},
-    {"type": "monitor", "center": [L - 0.62, 1.22, 0.98], "extents": [0.16, 0.46, 0.34], "rz": 0.0, "color": "#8f8f8f"},
-    {"type": "monitor", "center": [L - 0.62, 1.78, 0.98], "extents": [0.16, 0.46, 0.34], "rz": 0.0, "color": "#8f8f8f"},
-    {"type": "chair", "center": [1.35, 1.5, 0.24], "extents": [0.55, 0.55, 0.48], "rz": 0.0, "color": "#cfcfcf"},
+    {"type": "desk", "center": [L - 0.30, 1.5, 0.755], "extents": [0.60, 1.7, 0.05], "rz": 0.0, "color": "#b7b7b7"},
+    {"type": "desk", "center": [L - 0.30, 0.85, 0.36], "extents": [0.55, 0.5, 0.72], "rz": 0.0, "color": "#a9a9a9"},
+    {"type": "desk", "center": [L - 0.30, 2.15, 0.36], "extents": [0.55, 0.5, 0.72], "rz": 0.0, "color": "#a9a9a9"},
+    {"type": "monitor", "center": [L - 0.52, 1.18, 0.99], "extents": [0.07, 0.46, 0.30], "rz": 0.0, "color": "#6f6f6f"},
+    {"type": "monitor", "center": [L - 0.52, 1.18, 0.86], "extents": [0.12, 0.24, 0.14], "rz": 0.0, "color": "#8f8f8f"},
+    {"type": "monitor", "center": [L - 0.52, 1.82, 0.99], "extents": [0.07, 0.46, 0.30], "rz": 0.0, "color": "#6f6f6f"},
+    {"type": "monitor", "center": [L - 0.52, 1.82, 0.86], "extents": [0.12, 0.24, 0.14], "rz": 0.0, "color": "#8f8f8f"},
+    {"type": "chair", "center": [1.35, 1.5, 0.45], "extents": [0.5, 0.5, 0.06], "rz": 0.0, "color": "#cfcfcf"},
+    {"type": "chair", "center": [1.06, 1.5, 0.72], "extents": [0.08, 0.5, 0.55], "rz": 0.0, "color": "#cfcfcf"},
+    {"type": "chair", "center": [1.35, 1.5, 0.16], "extents": [0.07, 0.07, 0.18], "rz": 0.0, "color": "#cfcfcf"},
+    {"type": "chair", "center": [1.35, 1.5, 0.03], "extents": [0.4, 0.4, 0.04], "rz": 0.0, "color": "#cfcfcf"},
     {"type": "window", "center": [1.7, W - 0.015, 1.5], "extents": [1.2, 0.02, 1.2], "rz": 0.0, "color": "#74b6d4"},
     {"type": "door", "center": [0.55, 0.015, 1.0], "extents": [0.8, 0.02, 2.0], "rz": 0.0, "color": "#b58b52"},
 ]
