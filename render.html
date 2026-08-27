@@ -151,8 +151,16 @@ const BOXES = [{"type": "panel", "center": [0.025, 0.6, 1.2], "extents": [0.05, 
   controls.update();
 
   function goView(v) {
-    if (v === 'zoomin') { controls.dollyIn(); controls.update(); return; }
-    if (v === 'zoomout') { controls.dollyOut(); controls.update(); return; }
+    if (v === 'zoomin' || v === 'zoomout') {
+      var dir = new THREE.Vector3().subVectors(controls.target, cam.position);
+      var len = dir.length();
+      if (len < 0.6 && v === 'zoomin') { controls.update(); return; }
+      dir.normalize();
+      var step = (v === 'zoomin' ? -1 : 1) * Math.max(len * 0.18, 0.05);
+      cam.position.addScaledVector(dir, step);
+      controls.update();
+      return;
+    }
     var t = [L / 2, H / 2, -W / 2];
     var p = {
       front: [L + 3.2, H / 2, -W / 2],
