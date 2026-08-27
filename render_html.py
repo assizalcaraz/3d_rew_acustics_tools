@@ -33,8 +33,15 @@ HTML_DOC = """<!DOCTYPE html>
 <title>Modelo acústico - Opción B</title>
 <style>
   html,body{margin:0;height:100%;font-family:system-ui,sans-serif;background:#f4f5f7}
-  #app{position:relative;height:100%}
+  #app{display:flex;height:100%}
+  #stage{position:relative;flex:1;min-width:0}
   canvas{display:block}
+  #side{width:300px;flex:none;padding:10px 14px 14px;overflow-y:auto;background:#e9ecf2;
+        border-left:1px solid #d7dbe4;box-sizing:border-box}
+  #side h2{font-size:14px;margin:4px 0 10px;color:#1f2a44}
+  #side img{width:100%;border-radius:8px;display:block;margin-bottom:6px;
+            border:1px solid #c9cfdb}
+  #side p{font-size:11px;color:#8891a3;margin:0 0 12px}
   #info{position:absolute;top:12px;left:12px;background:rgba(255,255,255,.95);
         border:1px solid #dfe2e8;border-radius:10px;padding:12px 16px;font-size:13px;
         box-shadow:0 2px 8px rgba(0,0,0,.08);max-width:300px;z-index:5}
@@ -59,27 +66,36 @@ HTML_DOC = """<!DOCTYPE html>
 </head>
 <body>
 <div id="app">
-  <div id="info">
-    <h1>Modelado acústico — Opción B</h1>
-    <p>Habitación <b>3,20 × 3,00 × 3,00 m</b> (alto asumido) · ejes: X largo · Y ancho · Z altura</p>
-    <p><span class="sw" style="background:#16a2a2"></span>12 paneles 50 mm (1,20 × 0,60)</p>
-    <p><span class="sw" style="background:#f08c0a"></span>8 trampas de esquina 100 mm</p>
-    <p><span class="sw" style="background:#3f9b5a"></span>2 paneles de techo colgados</p>
-    <p style="margin-top:6px;color:#8891a3">FRENTE = pared de los monitores. Rotá click-arrastre · zoom rueda · mouse sobre un panel = medidas</p>
+  <div id="stage">
+    <div id="info">
+      <h1>Modelado acústico — Opción B</h1>
+      <p>Habitación <b>3,20 × 3,00 × 3,00 m</b> (alto asumido) · ejes: X largo · Y ancho · Z altura</p>
+      <p><span class="sw" style="background:#16a2a2"></span>12 paneles 50 mm (1,20 × 0,60)</p>
+      <p><span class="sw" style="background:#f08c0a"></span>8 trampas de esquina 100 mm</p>
+      <p><span class="sw" style="background:#3f9b5a"></span>2 paneles de techo colgados</p>
+      <p style="margin-top:6px;color:#8891a3">FRENTE = pared de los monitores. Rotá click-arrastre · zoom rueda · mouse sobre un panel = medidas</p>
+    </div>
+    <div id="views">
+      <button data-v="front" title="Frente = pared de los monitores">FRENTE</button>
+      <button data-v="back">ATRÁS</button>
+      <button data-v="left">IZQ</button>
+      <button data-v="right">DER</button>
+      <button data-v="top">PLANTA</button>
+      <button data-v="iso">3/4</button>
+      <button data-v="zoomout" title="Alejar">−</button>
+      <button data-v="zoomin" title="Acercar">+</button>
+    </div>
+    <div id="tooltip"></div>
+    <div id="hint">Modelo paramétrico — medidas reales (sin escala)</div>
+    <div id="error"></div>
   </div>
-  <div id="views">
-    <button data-v="front" title="Frente = pared de los monitores">FRENTE</button>
-    <button data-v="back">ATRÁS</button>
-    <button data-v="left">IZQ</button>
-    <button data-v="right">DER</button>
-    <button data-v="top">PLANTA</button>
-    <button data-v="iso">3/4</button>
-    <button data-v="zoomout" title="Alejar">−</button>
-    <button data-v="zoomin" title="Acercar">+</button>
+  <div id="side">
+    <h2>Renders ilustrativos</h2>
+    <img src="foto_1.jpg" alt="Render ilustrativo 1">
+    <p>Render generado con IA — referencia estética</p>
+    <img src="foto_2.jpg" alt="Render ilustrativo 2">
+    <p>Render generado con IA — referencia estética</p>
   </div>
-  <div id="tooltip"></div>
-  <div id="hint">Modelo paramétrico — medidas reales (sin escala)</div>
-  <div id="error"></div>
 </div>
 
 <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
@@ -87,7 +103,7 @@ HTML_DOC = """<!DOCTYPE html>
 <script>
 const BOXES = __BOXES__;
 (function () {
-  const app = document.getElementById('app');
+  const stage = document.getElementById('stage');
   const errEl = document.getElementById('error');
   function fail(m) {
     errEl.style.display = 'block';
@@ -101,11 +117,11 @@ const BOXES = __BOXES__;
   const escena = new THREE.Scene();
   escena.background = new THREE.Color(0xf4f5f7);
 
-  const cam = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.05, 100);
+  const cam = new THREE.PerspectiveCamera(50, stage.clientWidth / stage.clientHeight, 0.05, 100);
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setSize(innerWidth, innerHeight);
-  app.appendChild(renderer.domElement);
+  renderer.setSize(stage.clientWidth, stage.clientHeight);
+  stage.appendChild(renderer.domElement);
 
   escena.add(new THREE.HemisphereLight(0xffffff, 0xcccccc, 0.9));
   var dl = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -153,7 +169,7 @@ const BOXES = __BOXES__;
     el.className = 'lbl';
     el.style.color = color;
     el.textContent = text;
-    app.appendChild(el);
+    stage.appendChild(el);
     return el;
   }
 
@@ -208,12 +224,13 @@ const BOXES = __BOXES__;
   });
 
   function refreshLabels() {
+    var r = stage.getBoundingClientRect();
     labs.forEach(function (lb) {
       var v = lb.pos.clone().project(cam);
       if (v.z > 1) { lb.el.style.display = 'none'; return; }
       lb.el.style.display = 'block';
-      lb.el.style.left = ((v.x + 1) * innerWidth / 2) + 'px';
-      lb.el.style.top = ((1 - v.y) * innerHeight / 2) + 'px';
+      lb.el.style.left = (r.left + (v.x + 1) * r.width / 2) + 'px';
+      lb.el.style.top = (r.top + (1 - v.y) * r.height / 2) + 'px';
     });
   }
   controls.addEventListener('change', refreshLabels);
@@ -224,8 +241,9 @@ const BOXES = __BOXES__;
   var tooltip = document.getElementById('tooltip');
 
   renderer.domElement.addEventListener('pointermove', function (e) {
-    pointer.x = (e.clientX / innerWidth) * 2 - 1;
-    pointer.y = -(e.clientY / innerHeight) * 2 + 1;
+    var r = stage.getBoundingClientRect();
+    pointer.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+    pointer.y = -((e.clientY - r.top) / r.height) * 2 + 1;
     raycaster.setFromCamera(pointer, cam);
     var hit = raycaster.intersectObjects(meshes)[0];
     if (hit) {
@@ -241,9 +259,9 @@ const BOXES = __BOXES__;
   });
 
   addEventListener('resize', function () {
-    cam.aspect = innerWidth / innerHeight;
+    cam.aspect = stage.clientWidth / stage.clientHeight;
     cam.updateProjectionMatrix();
-    renderer.setSize(innerWidth, innerHeight);
+    renderer.setSize(stage.clientWidth, stage.clientHeight);
     refreshLabels();
   });
 
