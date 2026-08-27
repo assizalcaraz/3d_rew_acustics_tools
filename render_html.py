@@ -184,7 +184,7 @@ const BOXES = __BOXES__;
       var len = dir.length();
       if (len < 0.6 && v === 'zoomin') { controls.update(); return; }
       dir.normalize();
-      var step = (v === 'zoomin' ? -1 : 1) * Math.max(len * 0.18, 0.05);
+      var step = (v === 'zoomin' ? 1 : -1) * Math.max(len * 0.18, 0.05);
       cam.position.addScaledVector(dir, step);
       controls.update();
       return;
