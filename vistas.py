@@ -196,6 +196,8 @@ def room_wireframe(ax):
 
 room_wireframe(ax)
 for f in FURN:
+    if f["type"] in ("window", "door"):
+        continue
     draw_box_3d(ax, f, f["color"])
 for p in PANELS:
     draw_box_3d(ax, p, "#16a2a2" if p["type"] == "panel" else "#3f9b5a")
