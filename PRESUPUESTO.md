@@ -87,6 +87,29 @@ La medición preliminar define la cantidad final; este mix es el punto de partid
 | Modelado 3D | 1 | 120 | 120 |
 | **TOTAL OPCIÓN B** | | | **≈ 952** |
 
+### 4.1 Estructura de cada trampa (no es un panel plano)
+
+La trampa llena la esquina: prisma triangular de catetos **0,60 × 0,60** y alto **1,20**. El frente (hipotenusa) es gabardina sobre bastidor. Las **4 tapas** son fenólico; no alcanza con metros lineales de tira de 5 cm.
+
+| Pieza | Por trampa | × 8 trampas | Área |
+|---|---|---|---|
+| Tapa rectángulo 0,60 × 1,20 (contra muro) | 2 | **16** | 16 × 0,72 = **11,52 m²** |
+| Tapa triángulo catetos 0,60 (tapa y fondo) | 2 | **16** | 16 × 0,18 = **2,88 m²** |
+| **Tapas fenólicas** | 4 | **32** | **14,40 m²** |
+| Lana 100 mm (relleno del prisma) | 1 | 8 | — |
+| Gabardina (cara hipotenusa ≈ 0,85 × 1,20) | 1 | 8 | ≈ 8,2 m² + merma |
+| Tira 5 cm (solo marco del frente) | ≈ 4,1 m | ≈ 33 m | no sustituye las tapas |
+
+### 4.2 Fijaciones de colgado (no las cubren tornillos de armado ni flete)
+
+| Pieza | Cant. | Para qué |
+|---|---|---|
+| Ménsulas chicas | 20 | 10 paneles de pared × 2 |
+| Pitones cerrados | 16 | 2 clouds × 8 (4 en panel + 4 en techo) |
+| Cadena | ~8 m | 2 clouds × 4 tramos |
+| Mosquetones | 8 | un tramo cada uno |
+| Tarugos + tornillos de muro | 20 | anclaje de las ménsulas |
+
 > Si se detecta una frecuencia puntual muy molesta en la medición preliminar, agregué un **resonador Helmholtz** a medida (+80–120 USD de materiales).
 
 ---

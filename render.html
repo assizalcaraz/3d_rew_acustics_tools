@@ -5,6 +5,8 @@
 <title>Modelo acústico - Opción B</title>
 <style>
   html,body{margin:0;height:100%;font-family:system-ui,sans-serif;background:#f4f5f7}
+  html.embed #side{display:none}
+  html.embed #app{display:block;height:100%}
   #app{display:flex;height:100%}
   #stage{position:relative;flex:1;min-width:0}
   canvas{display:block}
@@ -16,12 +18,24 @@
   #side p{font-size:11px;color:#8891a3;margin:0 0 12px}
   #info{position:absolute;top:12px;left:12px;background:rgba(255,255,255,.95);
         border:1px solid #dfe2e8;border-radius:10px;padding:12px 16px;font-size:13px;
-        box-shadow:0 2px 8px rgba(0,0,0,.08);max-width:300px;z-index:5}
+        box-shadow:0 2px 8px rgba(0,0,0,.08);max-width:320px;z-index:5}
   #info h1{font-size:15px;margin:0 0 6px;color:#1f2a44}
   #info p{margin:2px 0;color:#444}
   .sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+  #inspector{position:absolute;bottom:44px;left:12px;background:rgba(255,255,255,.96);
+        border:1px solid #dfe2e8;border-radius:10px;padding:12px 16px;font-size:13px;
+        box-shadow:0 2px 8px rgba(0,0,0,.08);min-width:280px;max-width:360px;z-index:5}
+  #inspector h2{font-size:13px;margin:0 0 6px;color:#1f2a44}
+  #inspector .muted{color:#8891a3;font-size:12px;margin:0 0 8px}
+  #inspector .pos{font-variant-numeric:tabular-nums;font-family:ui-monospace,Menlo,monospace;font-size:12px}
+  #inspector kbd{background:#eef2fb;border:1px solid #cfd4de;border-radius:4px;padding:1px 5px;font-size:11px}
+  #insp-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+  #insp-actions button,.chk{background:#fff;border:1px solid #cfd4de;border-radius:8px;
+        padding:6px 10px;font-size:12px;cursor:pointer;color:#1f2a44}
+  #insp-actions button:hover{background:#eef2fb;border-color:#9fb0d8}
+  .chk{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
   #views{position:absolute;top:12px;right:12px;display:flex;gap:6px;z-index:5;flex-wrap:wrap;
-         justify-content:flex-end}
+         justify-content:flex-end;max-width:55%}
   #views button{background:#fff;border:1px solid #cfd4de;border-radius:8px;padding:7px 12px;
          font-size:12px;cursor:pointer;color:#1f2a44;box-shadow:0 1px 3px rgba(0,0,0,.08)}
   #views button:hover{background:#eef2fb;border-color:#9fb0d8}
@@ -34,6 +48,9 @@
          color:#b00020;font-size:14px;display:none;z-index:10;box-shadow:0 4px 16px rgba(0,0,0,.15)}
   .lbl{position:absolute;pointer-events:none;font-size:12px;font-weight:600;color:#1f2a44;
        transform:translate(-50%,-50%);text-shadow:0 1px 2px #fff;z-index:3}
+  .lbl.tag{font-size:11px;background:rgba(255,255,255,.9);padding:1px 5px;border-radius:4px;
+       border:1px solid #cfd4de;font-weight:700;text-shadow:none}
+  .lbl.tag.on{background:#1f2a44;color:#fff;border-color:#1f2a44}
 </style>
 </head>
 <body>
@@ -41,11 +58,12 @@
   <div id="stage">
     <div id="info">
       <h1>Modelado acústico — Opción B</h1>
-      <p>Habitación <b>3,20 × 3,00 × 3,00 m</b> (alto asumido) · ejes: X largo · Y ancho · Z altura</p>
-      <p><span class="sw" style="background:#16a2a2"></span>12 paneles 50 mm (1,20 × 0,60)</p>
-      <p><span class="sw" style="background:#f08c0a"></span>8 trampas de esquina 100 mm</p>
-      <p><span class="sw" style="background:#3f9b5a"></span>2 paneles de techo colgados</p>
-      <p style="margin-top:6px;color:#8891a3">FRENTE = pared de los monitores. Rotá click-arrastre · zoom rueda · mouse sobre un panel = medidas</p>
+      <p>Habitación <b>3,20 × 3,00 × 3,00 m</b> · escala 1:1 (1 unidad = 1 m)</p>
+      <p><span class="sw" style="background:#16a2a2"></span>10 paneles de pared 50 mm (1,20 × 0,60)</p>
+      <p><span class="sw" style="background:#3f9b5a"></span>2 clouds C1·C2 (1,20 × 0,60)</p>
+      <p><span class="sw" style="background:#f08c0a"></span>8 trampas prisma T1–T8 (0,60 × 0,60 × 1,20)</p>
+      <p><span class="sw" style="background:#c9a227"></span>tapas fenólicas: 16 □ + 16 △</p>
+      <p style="margin-top:6px;color:#8891a3">Click un objeto para moverlo (flechas). Órbita: arrastrar el vacío. Rejilla del piso = 0,20 m; barra negra = 1,00 m.</p>
     </div>
     <div id="views">
       <button data-v="front" title="Frente = pared de los monitores">FRENTE</button>
@@ -57,23 +75,42 @@
       <button data-v="zoomout" title="Alejar">−</button>
       <button data-v="zoomin" title="Acercar">+</button>
     </div>
+    <div id="inspector">
+      <h2 id="insp-name">Ningún objeto seleccionado</h2>
+      <p class="muted" id="insp-hint">Click en un panel, cloud, trampa o mueble. Los muros no se mueven. El tamaño no se escala: solo se traslada. Una trampa se mueve entera (prisma + 4 tapas).</p>
+      <p class="pos" id="insp-size"></p>
+      <p class="pos" id="insp-rel"></p>
+      <p class="pos" id="insp-pos"></p>
+      <div id="insp-actions">
+        <button type="button" id="btn-reset-one">Restaurar este</button>
+        <button type="button" id="btn-reset-all">Restaurar todos</button>
+        <label class="chk"><input type="checkbox" id="chk-snap" checked> Snap 5 cm</label>
+        <label class="chk"><input type="checkbox" id="chk-tags" checked> Etiquetas</label>
+      </div>
+    </div>
     <div id="tooltip"></div>
-    <div id="hint">Modelo paramétrico — medidas reales (sin escala)</div>
+    <div id="hint">Esc suelta · flechas = 5 cm · Shift+flechas = 20 cm · PageUp/Down = altura</div>
     <div id="error"></div>
   </div>
   <div id="side">
     <h2>Renders ilustrativos</h2>
     <img src="foto_1.jpg" alt="Render ilustrativo 1">
-    <p>Render generado con IA — referencia estética</p>
+    <p>Render generado con IA — referencia estética (no es el modelo a escala)</p>
     <img src="foto_2.jpg" alt="Render ilustrativo 2">
-    <p>Render generado con IA — referencia estética</p>
+    <p>Render generado con IA — referencia estética (no es el modelo a escala)</p>
   </div>
 </div>
 
 <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
 <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/controls/TransformControls.js"></script>
 <script>
-const BOXES = [{"type": "panel", "center": [0.025, 0.6, 1.2], "extents": [0.05, 0.6, 1.2], "rz": 0.0, "color": 1483426, "opacity": 1.0, "label": "Panel 50 mm \u00b7 1,20 x 0,60 m"}, {"type": "panel", "center": [3.175, 0.6, 1.2], "extents": [0.05, 0.6, 1.2], "rz": 0.0, "color": 1483426, "opacity": 1.0, "label": "Panel 50 mm \u00b7 1,20 x 0,60 m"}, {"type": "panel", "center": [0.025, 1.5, 1.2], "extents": [0.05, 0.6, 1.2], "rz": 0.0, "color": 1483426, "opacity": 1.0, "label": "Panel 50 mm \u00b7 1,20 x 0,60 m"}, {"type": "panel", "center": [3.175, 1.5, 1.2], "extents": [0.05, 0.6, 1.2], "rz": 0.0, "color": 1483426, "opacity": 1.0, "label": "Panel 50 mm \u00b7 1,20 x 0,60 m"}, {"type": "panel", "center": [0.025, 2.4, 1.2], "extents": [0.05, 0.6, 1.2], "rz": 0.0, "color": 1483426, "opacity": 1.0, "label": "Panel 50 mm \u00b7 1,20 x 0,60 m"}, {"type": "panel", "center": [3.175, 2.4, 1.2], "extents": [0.05, 0.6, 1.2], "rz": 0.0, "color": 1483426, "opacity": 1.0, "label": "Panel 50 mm \u00b7 1,20 x 0,60 m"}, {"type": "panel", "center": [2.2, 0.025, 1.2], "extents": [0.6, 0.05, 1.2], "rz": 0.0, "color": 1483426, "opacity": 1.0, "label": "Panel 50 mm \u00b7 1,20 x 0,60 m"}, {"type": "panel", "center": [2.2, 2.975, 1.2], "extents": [0.6, 0.05, 1.2], "rz": 0.0, "color": 1483426, "opacity": 1.0, "label": "Panel 50 mm \u00b7 1,20 x 0,60 m"}, {"type": "panel", "center": [1.4, 0.025, 1.2], "extents": [0.6, 0.05, 1.2], "rz": 0.0, "color": 1483426, "opacity": 1.0, "label": "Panel 50 mm \u00b7 1,20 x 0,60 m"}, {"type": "panel", "center": [1.4, 2.975, 1.2], "extents": [0.6, 0.05, 1.2], "rz": 0.0, "color": 1483426, "opacity": 1.0, "label": "Panel 50 mm \u00b7 1,20 x 0,60 m"}, {"type": "ceil", "center": [1.6, 1.5, 2.555], "extents": [1.2, 0.6, 0.05], "rz": 0.0, "color": 4168538, "opacity": 1.0, "label": "Panel de techo colgado \u00b7 1,20 x 0,60 m (a 0,42 m del cielorraso)"}, {"type": "ceil", "center": [2.3, 1.5, 2.555], "extents": [1.2, 0.6, 0.05], "rz": 0.0, "color": 4168538, "opacity": 1.0, "label": "Panel de techo colgado \u00b7 1,20 x 0,60 m (a 0,42 m del cielorraso)"}, {"type": "trap", "center": [0.3, 0.3, 0.75], "extents": [0.8485, 0.1, 1.2], "rz": -45.0, "color": 15764490, "opacity": 1.0, "label": "Trampa de esquina 100 mm \u00b7 1,20 x 0,60 m"}, {"type": "trap", "center": [0.3, 0.3, 1.95], "extents": [0.8485, 0.1, 1.2], "rz": -45.0, "color": 15764490, "opacity": 1.0, "label": "Trampa de esquina 100 mm \u00b7 1,20 x 0,60 m"}, {"type": "trap", "center": [2.9, 0.3, 0.75], "extents": [0.8485, 0.1, 1.2], "rz": 45.0, "color": 15764490, "opacity": 1.0, "label": "Trampa de esquina 100 mm \u00b7 1,20 x 0,60 m"}, {"type": "trap", "center": [2.9, 0.3, 1.95], "extents": [0.8485, 0.1, 1.2], "rz": 45.0, "color": 15764490, "opacity": 1.0, "label": "Trampa de esquina 100 mm \u00b7 1,20 x 0,60 m"}, {"type": "trap", "center": [0.3, 2.7, 0.75], "extents": [0.8485, 0.1, 1.2], "rz": 45.0, "color": 15764490, "opacity": 1.0, "label": "Trampa de esquina 100 mm \u00b7 1,20 x 0,60 m"}, {"type": "trap", "center": [0.3, 2.7, 1.95], "extents": [0.8485, 0.1, 1.2], "rz": 45.0, "color": 15764490, "opacity": 1.0, "label": "Trampa de esquina 100 mm \u00b7 1,20 x 0,60 m"}, {"type": "trap", "center": [2.9, 2.7, 0.75], "extents": [0.8485, 0.1, 1.2], "rz": 135.0, "color": 15764490, "opacity": 1.0, "label": "Trampa de esquina 100 mm \u00b7 1,20 x 0,60 m"}, {"type": "trap", "center": [2.9, 2.7, 1.95], "extents": [0.8485, 0.1, 1.2], "rz": 135.0, "color": 15764490, "opacity": 1.0, "label": "Trampa de esquina 100 mm \u00b7 1,20 x 0,60 m"}, {"type": "desk", "center": [2.9000000000000004, 1.5, 0.755], "extents": [0.6, 1.7, 0.05], "rz": 0.0, "color": 12040119, "opacity": 1.0, "label": "Escritorio (referencia)"}, {"type": "desk", "center": [2.9000000000000004, 0.85, 0.36], "extents": [0.55, 0.5, 0.72], "rz": 0.0, "color": 12040119, "opacity": 1.0, "label": "Escritorio (referencia)"}, {"type": "desk", "center": [2.9000000000000004, 2.15, 0.36], "extents": [0.55, 0.5, 0.72], "rz": 0.0, "color": 12040119, "opacity": 1.0, "label": "Escritorio (referencia)"}, {"type": "monitor", "center": [2.68, 1.18, 0.99], "extents": [0.07, 0.46, 0.3], "rz": 0.0, "color": 9408399, "opacity": 1.0, "label": "Monitor (referencia)"}, {"type": "monitor", "center": [2.68, 1.18, 0.86], "extents": [0.12, 0.24, 0.14], "rz": 0.0, "color": 9408399, "opacity": 1.0, "label": "Monitor (referencia)"}, {"type": "monitor", "center": [2.68, 1.82, 0.99], "extents": [0.07, 0.46, 0.3], "rz": 0.0, "color": 9408399, "opacity": 1.0, "label": "Monitor (referencia)"}, {"type": "monitor", "center": [2.68, 1.82, 0.86], "extents": [0.12, 0.24, 0.14], "rz": 0.0, "color": 9408399, "opacity": 1.0, "label": "Monitor (referencia)"}, {"type": "chair", "center": [1.9, 1.5, 0.45], "extents": [0.5, 0.5, 0.06], "rz": 0.0, "color": 13619151, "opacity": 1.0, "label": "Silla (referencia)"}, {"type": "chair", "center": [1.61, 1.5, 0.72], "extents": [0.08, 0.5, 0.55], "rz": 0.0, "color": 13619151, "opacity": 1.0, "label": "Silla (referencia)"}, {"type": "chair", "center": [1.9, 1.5, 0.16], "extents": [0.07, 0.07, 0.18], "rz": 0.0, "color": 13619151, "opacity": 1.0, "label": "Silla (referencia)"}, {"type": "chair", "center": [1.9, 1.5, 0.03], "extents": [0.4, 0.4, 0.04], "rz": 0.0, "color": 13619151, "opacity": 1.0, "label": "Silla (referencia)"}, {"type": "window", "center": [1.7, 2.985, 1.5], "extents": [1.2, 0.02, 1.2], "rz": 0.0, "color": 7648980, "opacity": 1.0, "label": "Ventana (asumida) \u00b7 1,20 x 1,20 \u00b7 antepecho 0,90 m"}, {"type": "door", "center": [0.55, 0.015, 1.0], "extents": [0.8, 0.02, 2.0], "rz": 0.0, "color": 11897682, "opacity": 1.0, "label": "Puerta (asumida) \u00b7 0,80 x 2,00 m"}, {"type": "wall", "center": [1.6, 1.5, -0.04], "extents": [3.3000000000000003, 3.1, 0.08], "rz": 0.0, "color": 13684944, "opacity": 0.12, "label": "Muro"}, {"type": "wall", "center": [0.025, 1.5, 1.5], "extents": [0.05, 3.05, 3.0], "rz": 0.0, "color": 13684944, "opacity": 0.12, "label": "Muro"}, {"type": "wall", "center": [3.1750000000000003, 1.5, 1.5], "extents": [0.05, 3.05, 3.0], "rz": 0.0, "color": 13684944, "opacity": 0.12, "label": "Muro"}, {"type": "wall", "center": [1.6, 0.025, 1.5], "extents": [3.25, 0.05, 3.0], "rz": 0.0, "color": 13684944, "opacity": 0.12, "label": "Muro"}, {"type": "wall", "center": [1.6, 2.975, 1.5], "extents": [3.25, 0.05, 3.0], "rz": 0.0, "color": 13684944, "opacity": 0.12, "label": "Muro"}];
+if (location.search.indexOf('embed=1') !== -1) {
+  document.documentElement.classList.add('embed');
+  var side = document.getElementById('side');
+  if (side) side.style.display = 'none';
+}
+const BOXES = [{"type": "panel", "center": [0.025, 0.6, 1.2], "extents": [0.05, 0.6, 1.2], "rz": 0.0, "color": 1483426, "name": "P1", "opacity": 1.0, "label": "Panel de pared 50 mm \u00b7 1,20 \u00d7 0,60 m", "movable": true}, {"type": "panel", "center": [3.175, 0.6, 1.2], "extents": [0.05, 0.6, 1.2], "rz": 0.0, "color": 1483426, "name": "P2", "opacity": 1.0, "label": "Panel de pared 50 mm \u00b7 1,20 \u00d7 0,60 m", "movable": true}, {"type": "panel", "center": [0.025, 1.5, 1.2], "extents": [0.05, 0.6, 1.2], "rz": 0.0, "color": 1483426, "name": "P3", "opacity": 1.0, "label": "Panel de pared 50 mm \u00b7 1,20 \u00d7 0,60 m", "movable": true}, {"type": "panel", "center": [3.175, 1.5, 1.2], "extents": [0.05, 0.6, 1.2], "rz": 0.0, "color": 1483426, "name": "P4", "opacity": 1.0, "label": "Panel de pared 50 mm \u00b7 1,20 \u00d7 0,60 m", "movable": true}, {"type": "panel", "center": [0.025, 2.4, 1.2], "extents": [0.05, 0.6, 1.2], "rz": 0.0, "color": 1483426, "name": "P5", "opacity": 1.0, "label": "Panel de pared 50 mm \u00b7 1,20 \u00d7 0,60 m", "movable": true}, {"type": "panel", "center": [3.175, 2.4, 1.2], "extents": [0.05, 0.6, 1.2], "rz": 0.0, "color": 1483426, "name": "P6", "opacity": 1.0, "label": "Panel de pared 50 mm \u00b7 1,20 \u00d7 0,60 m", "movable": true}, {"type": "panel", "center": [2.2, 0.025, 1.2], "extents": [0.6, 0.05, 1.2], "rz": 0.0, "color": 1483426, "name": "P7", "opacity": 1.0, "label": "Panel de pared 50 mm \u00b7 1,20 \u00d7 0,60 m", "movable": true}, {"type": "panel", "center": [2.2, 2.975, 1.2], "extents": [0.6, 0.05, 1.2], "rz": 0.0, "color": 1483426, "name": "P8", "opacity": 1.0, "label": "Panel de pared 50 mm \u00b7 1,20 \u00d7 0,60 m", "movable": true}, {"type": "panel", "center": [1.4, 0.025, 1.2], "extents": [0.6, 0.05, 1.2], "rz": 0.0, "color": 1483426, "name": "P9", "opacity": 1.0, "label": "Panel de pared 50 mm \u00b7 1,20 \u00d7 0,60 m", "movable": true}, {"type": "panel", "center": [1.4, 2.975, 1.2], "extents": [0.6, 0.05, 1.2], "rz": 0.0, "color": 1483426, "name": "P10", "opacity": 1.0, "label": "Panel de pared 50 mm \u00b7 1,20 \u00d7 0,60 m", "movable": true}, {"type": "ceil", "center": [1.6, 1.5, 2.555], "extents": [0.6, 1.2, 0.05], "rz": 0.0, "color": 4168538, "name": "C1", "opacity": 1.0, "label": "Cloud de techo \u00b7 1,20 \u00d7 0,60 \u00d7 0,05 m \u00b7 colgado 0,42 m", "movable": true}, {"type": "ceil", "center": [2.3, 1.5, 2.555], "extents": [0.6, 1.2, 0.05], "rz": 0.0, "color": 4168538, "name": "C2", "opacity": 1.0, "label": "Cloud de techo \u00b7 1,20 \u00d7 0,60 \u00d7 0,05 m \u00b7 colgado 0,42 m", "movable": true}, {"type": "trap", "center": [0.2, 0.2, 0.75], "extents": [0.6, 0.6, 1.2], "rz": 0.0, "color": 15764490, "gid": "T1", "shape": "prism", "base": [[0.012, 0.012], [0.6, 0.012], [0.012, 0.6]], "z0": 0.162, "z1": 1.338, "name": "T1", "opacity": 1.0, "label": "Trampa \u2014 prisma 0,60 \u00d7 0,60 \u00d7 1,20 (lana + gabardina al frente)", "movable": true}, {"type": "trap_lid", "center": [0.3, 0.006, 0.75], "extents": [0.6, 0.012, 1.2], "rz": 0.0, "color": 13214247, "part": "rect", "gid": "T1", "name": "T1", "opacity": 1.0, "label": "Tapa rect\u00e1ngulo 0,60 \u00d7 1,20 m (contra muro)", "movable": false}, {"type": "trap_lid", "center": [0.006, 0.3, 0.75], "extents": [0.012, 0.6, 1.2], "rz": 0.0, "color": 13214247, "part": "rect", "gid": "T1", "name": "T1", "opacity": 1.0, "label": "Tapa rect\u00e1ngulo 0,60 \u00d7 1,20 m (contra muro)", "movable": false}, {"type": "trap_lid", "center": [0.2, 0.2, 0.156], "extents": [0.6, 0.6, 0.012], "rz": 0.0, "color": 13214247, "part": "tri", "gid": "T1", "shape": "prism", "base": [[0.0, 0.0], [0.6, 0.0], [0.0, 0.6]], "z0": 0.15, "z1": 0.162, "name": "T1", "opacity": 1.0, "label": "Tapa tri\u00e1ngulo catetos 0,60 m (arriba/abajo)", "movable": false}, {"type": "trap_lid", "center": [0.2, 0.2, 1.344], "extents": [0.6, 0.6, 0.012], "rz": 0.0, "color": 13214247, "part": "tri", "gid": "T1", "shape": "prism", "base": [[0.0, 0.0], [0.6, 0.0], [0.0, 0.6]], "z0": 1.338, "z1": 1.35, "name": "T1", "opacity": 1.0, "label": "Tapa tri\u00e1ngulo catetos 0,60 m (arriba/abajo)", "movable": false}, {"type": "trap", "center": [0.2, 0.2, 1.95], "extents": [0.6, 0.6, 1.2], "rz": 0.0, "color": 15764490, "gid": "T2", "shape": "prism", "base": [[0.012, 0.012], [0.6, 0.012], [0.012, 0.6]], "z0": 1.362, "z1": 2.538, "name": "T2", "opacity": 1.0, "label": "Trampa \u2014 prisma 0,60 \u00d7 0,60 \u00d7 1,20 (lana + gabardina al frente)", "movable": true}, {"type": "trap_lid", "center": [0.3, 0.006, 1.95], "extents": [0.6, 0.012, 1.2], "rz": 0.0, "color": 13214247, "part": "rect", "gid": "T2", "name": "T2", "opacity": 1.0, "label": "Tapa rect\u00e1ngulo 0,60 \u00d7 1,20 m (contra muro)", "movable": false}, {"type": "trap_lid", "center": [0.006, 0.3, 1.95], "extents": [0.012, 0.6, 1.2], "rz": 0.0, "color": 13214247, "part": "rect", "gid": "T2", "name": "T2", "opacity": 1.0, "label": "Tapa rect\u00e1ngulo 0,60 \u00d7 1,20 m (contra muro)", "movable": false}, {"type": "trap_lid", "center": [0.2, 0.2, 1.356], "extents": [0.6, 0.6, 0.012], "rz": 0.0, "color": 13214247, "part": "tri", "gid": "T2", "shape": "prism", "base": [[0.0, 0.0], [0.6, 0.0], [0.0, 0.6]], "z0": 1.35, "z1": 1.362, "name": "T2", "opacity": 1.0, "label": "Tapa tri\u00e1ngulo catetos 0,60 m (arriba/abajo)", "movable": false}, {"type": "trap_lid", "center": [0.2, 0.2, 2.544], "extents": [0.6, 0.6, 0.012], "rz": 0.0, "color": 13214247, "part": "tri", "gid": "T2", "shape": "prism", "base": [[0.0, 0.0], [0.6, 0.0], [0.0, 0.6]], "z0": 2.538, "z1": 2.55, "name": "T2", "opacity": 1.0, "label": "Tapa tri\u00e1ngulo catetos 0,60 m (arriba/abajo)", "movable": false}, {"type": "trap", "center": [3.0, 0.2, 0.75], "extents": [0.6, 0.6, 1.2], "rz": 0.0, "color": 15764490, "gid": "T3", "shape": "prism", "base": [[3.188, 0.012], [2.6, 0.012], [3.188, 0.6]], "z0": 0.162, "z1": 1.338, "name": "T3", "opacity": 1.0, "label": "Trampa \u2014 prisma 0,60 \u00d7 0,60 \u00d7 1,20 (lana + gabardina al frente)", "movable": true}, {"type": "trap_lid", "center": [2.9, 0.006, 0.75], "extents": [0.6, 0.012, 1.2], "rz": 0.0, "color": 13214247, "part": "rect", "gid": "T3", "name": "T3", "opacity": 1.0, "label": "Tapa rect\u00e1ngulo 0,60 \u00d7 1,20 m (contra muro)", "movable": false}, {"type": "trap_lid", "center": [3.194, 0.3, 0.75], "extents": [0.012, 0.6, 1.2], "rz": 0.0, "color": 13214247, "part": "rect", "gid": "T3", "name": "T3", "opacity": 1.0, "label": "Tapa rect\u00e1ngulo 0,60 \u00d7 1,20 m (contra muro)", "movable": false}, {"type": "trap_lid", "center": [3.0, 0.2, 0.156], "extents": [0.6, 0.6, 0.012], "rz": 0.0, "color": 13214247, "part": "tri", "gid": "T3", "shape": "prism", "base": [[3.2, 0.0], [2.6, 0.0], [3.2, 0.6]], "z0": 0.15, "z1": 0.162, "name": "T3", "opacity": 1.0, "label": "Tapa tri\u00e1ngulo catetos 0,60 m (arriba/abajo)", "movable": false}, {"type": "trap_lid", "center": [3.0, 0.2, 1.344], "extents": [0.6, 0.6, 0.012], "rz": 0.0, "color": 13214247, "part": "tri", "gid": "T3", "shape": "prism", "base": [[3.2, 0.0], [2.6, 0.0], [3.2, 0.6]], "z0": 1.338, "z1": 1.35, "name": "T3", "opacity": 1.0, "label": "Tapa tri\u00e1ngulo catetos 0,60 m (arriba/abajo)", "movable": false}, {"type": "trap", "center": [3.0, 0.2, 1.95], "extents": [0.6, 0.6, 1.2], "rz": 0.0, "color": 15764490, "gid": "T4", "shape": "prism", "base": [[3.188, 0.012], [2.6, 0.012], [3.188, 0.6]], "z0": 1.362, "z1": 2.538, "name": "T4", "opacity": 1.0, "label": "Trampa \u2014 prisma 0,60 \u00d7 0,60 \u00d7 1,20 (lana + gabardina al frente)", "movable": true}, {"type": "trap_lid", "center": [2.9, 0.006, 1.95], "extents": [0.6, 0.012, 1.2], "rz": 0.0, "color": 13214247, "part": "rect", "gid": "T4", "name": "T4", "opacity": 1.0, "label": "Tapa rect\u00e1ngulo 0,60 \u00d7 1,20 m (contra muro)", "movable": false}, {"type": "trap_lid", "center": [3.194, 0.3, 1.95], "extents": [0.012, 0.6, 1.2], "rz": 0.0, "color": 13214247, "part": "rect", "gid": "T4", "name": "T4", "opacity": 1.0, "label": "Tapa rect\u00e1ngulo 0,60 \u00d7 1,20 m (contra muro)", "movable": false}, {"type": "trap_lid", "center": [3.0, 0.2, 1.356], "extents": [0.6, 0.6, 0.012], "rz": 0.0, "color": 13214247, "part": "tri", "gid": "T4", "shape": "prism", "base": [[3.2, 0.0], [2.6, 0.0], [3.2, 0.6]], "z0": 1.35, "z1": 1.362, "name": "T4", "opacity": 1.0, "label": "Tapa tri\u00e1ngulo catetos 0,60 m (arriba/abajo)", "movable": false}, {"type": "trap_lid", "center": [3.0, 0.2, 2.544], "extents": [0.6, 0.6, 0.012], "rz": 0.0, "color": 13214247, "part": "tri", "gid": "T4", "shape": "prism", "base": [[3.2, 0.0], [2.6, 0.0], [3.2, 0.6]], "z0": 2.538, "z1": 2.55, "name": "T4", "opacity": 1.0, "label": "Tapa tri\u00e1ngulo catetos 0,60 m (arriba/abajo)", "movable": false}, {"type": "trap", "center": [0.2, 2.8, 0.75], "extents": [0.6, 0.6, 1.2], "rz": 0.0, "color": 15764490, "gid": "T5", "shape": "prism", "base": [[0.012, 2.988], [0.6, 2.988], [0.012, 2.4]], "z0": 0.162, "z1": 1.338, "name": "T5", "opacity": 1.0, "label": "Trampa \u2014 prisma 0,60 \u00d7 0,60 \u00d7 1,20 (lana + gabardina al frente)", "movable": true}, {"type": "trap_lid", "center": [0.3, 2.994, 0.75], "extents": [0.6, 0.012, 1.2], "rz": 0.0, "color": 13214247, "part": "rect", "gid": "T5", "name": "T5", "opacity": 1.0, "label": "Tapa rect\u00e1ngulo 0,60 \u00d7 1,20 m (contra muro)", "movable": false}, {"type": "trap_lid", "center": [0.006, 2.7, 0.75], "extents": [0.012, 0.6, 1.2], "rz": 0.0, "color": 13214247, "part": "rect", "gid": "T5", "name": "T5", "opacity": 1.0, "label": "Tapa rect\u00e1ngulo 0,60 \u00d7 1,20 m (contra muro)", "movable": false}, {"type": "trap_lid", "center": [0.2, 2.8, 0.156], "extents": [0.6, 0.6, 0.012], "rz": 0.0, "color": 13214247, "part": "tri", "gid": "T5", "shape": "prism", "base": [[0.0, 3.0], [0.6, 3.0], [0.0, 2.4]], "z0": 0.15, "z1": 0.162, "name": "T5", "opacity": 1.0, "label": "Tapa tri\u00e1ngulo catetos 0,60 m (arriba/abajo)", "movable": false}, {"type": "trap_lid", "center": [0.2, 2.8, 1.344], "extents": [0.6, 0.6, 0.012], "rz": 0.0, "color": 13214247, "part": "tri", "gid": "T5", "shape": "prism", "base": [[0.0, 3.0], [0.6, 3.0], [0.0, 2.4]], "z0": 1.338, "z1": 1.35, "name": "T5", "opacity": 1.0, "label": "Tapa tri\u00e1ngulo catetos 0,60 m (arriba/abajo)", "movable": false}, {"type": "trap", "center": [0.2, 2.8, 1.95], "extents": [0.6, 0.6, 1.2], "rz": 0.0, "color": 15764490, "gid": "T6", "shape": "prism", "base": [[0.012, 2.988], [0.6, 2.988], [0.012, 2.4]], "z0": 1.362, "z1": 2.538, "name": "T6", "opacity": 1.0, "label": "Trampa \u2014 prisma 0,60 \u00d7 0,60 \u00d7 1,20 (lana + gabardina al frente)", "movable": true}, {"type": "trap_lid", "center": [0.3, 2.994, 1.95], "extents": [0.6, 0.012, 1.2], "rz": 0.0, "color": 13214247, "part": "rect", "gid": "T6", "name": "T6", "opacity": 1.0, "label": "Tapa rect\u00e1ngulo 0,60 \u00d7 1,20 m (contra muro)", "movable": false}, {"type": "trap_lid", "center": [0.006, 2.7, 1.95], "extents": [0.012, 0.6, 1.2], "rz": 0.0, "color": 13214247, "part": "rect", "gid": "T6", "name": "T6", "opacity": 1.0, "label": "Tapa rect\u00e1ngulo 0,60 \u00d7 1,20 m (contra muro)", "movable": false}, {"type": "trap_lid", "center": [0.2, 2.8, 1.356], "extents": [0.6, 0.6, 0.012], "rz": 0.0, "color": 13214247, "part": "tri", "gid": "T6", "shape": "prism", "base": [[0.0, 3.0], [0.6, 3.0], [0.0, 2.4]], "z0": 1.35, "z1": 1.362, "name": "T6", "opacity": 1.0, "label": "Tapa tri\u00e1ngulo catetos 0,60 m (arriba/abajo)", "movable": false}, {"type": "trap_lid", "center": [0.2, 2.8, 2.544], "extents": [0.6, 0.6, 0.012], "rz": 0.0, "color": 13214247, "part": "tri", "gid": "T6", "shape": "prism", "base": [[0.0, 3.0], [0.6, 3.0], [0.0, 2.4]], "z0": 2.538, "z1": 2.55, "name": "T6", "opacity": 1.0, "label": "Tapa tri\u00e1ngulo catetos 0,60 m (arriba/abajo)", "movable": false}, {"type": "trap", "center": [3.0, 2.8, 0.75], "extents": [0.6, 0.6, 1.2], "rz": 0.0, "color": 15764490, "gid": "T7", "shape": "prism", "base": [[3.188, 2.988], [2.6, 2.988], [3.188, 2.4]], "z0": 0.162, "z1": 1.338, "name": "T7", "opacity": 1.0, "label": "Trampa \u2014 prisma 0,60 \u00d7 0,60 \u00d7 1,20 (lana + gabardina al frente)", "movable": true}, {"type": "trap_lid", "center": [2.9, 2.994, 0.75], "extents": [0.6, 0.012, 1.2], "rz": 0.0, "color": 13214247, "part": "rect", "gid": "T7", "name": "T7", "opacity": 1.0, "label": "Tapa rect\u00e1ngulo 0,60 \u00d7 1,20 m (contra muro)", "movable": false}, {"type": "trap_lid", "center": [3.194, 2.7, 0.75], "extents": [0.012, 0.6, 1.2], "rz": 0.0, "color": 13214247, "part": "rect", "gid": "T7", "name": "T7", "opacity": 1.0, "label": "Tapa rect\u00e1ngulo 0,60 \u00d7 1,20 m (contra muro)", "movable": false}, {"type": "trap_lid", "center": [3.0, 2.8, 0.156], "extents": [0.6, 0.6, 0.012], "rz": 0.0, "color": 13214247, "part": "tri", "gid": "T7", "shape": "prism", "base": [[3.2, 3.0], [2.6, 3.0], [3.2, 2.4]], "z0": 0.15, "z1": 0.162, "name": "T7", "opacity": 1.0, "label": "Tapa tri\u00e1ngulo catetos 0,60 m (arriba/abajo)", "movable": false}, {"type": "trap_lid", "center": [3.0, 2.8, 1.344], "extents": [0.6, 0.6, 0.012], "rz": 0.0, "color": 13214247, "part": "tri", "gid": "T7", "shape": "prism", "base": [[3.2, 3.0], [2.6, 3.0], [3.2, 2.4]], "z0": 1.338, "z1": 1.35, "name": "T7", "opacity": 1.0, "label": "Tapa tri\u00e1ngulo catetos 0,60 m (arriba/abajo)", "movable": false}, {"type": "trap", "center": [3.0, 2.8, 1.95], "extents": [0.6, 0.6, 1.2], "rz": 0.0, "color": 15764490, "gid": "T8", "shape": "prism", "base": [[3.188, 2.988], [2.6, 2.988], [3.188, 2.4]], "z0": 1.362, "z1": 2.538, "name": "T8", "opacity": 1.0, "label": "Trampa \u2014 prisma 0,60 \u00d7 0,60 \u00d7 1,20 (lana + gabardina al frente)", "movable": true}, {"type": "trap_lid", "center": [2.9, 2.994, 1.95], "extents": [0.6, 0.012, 1.2], "rz": 0.0, "color": 13214247, "part": "rect", "gid": "T8", "name": "T8", "opacity": 1.0, "label": "Tapa rect\u00e1ngulo 0,60 \u00d7 1,20 m (contra muro)", "movable": false}, {"type": "trap_lid", "center": [3.194, 2.7, 1.95], "extents": [0.012, 0.6, 1.2], "rz": 0.0, "color": 13214247, "part": "rect", "gid": "T8", "name": "T8", "opacity": 1.0, "label": "Tapa rect\u00e1ngulo 0,60 \u00d7 1,20 m (contra muro)", "movable": false}, {"type": "trap_lid", "center": [3.0, 2.8, 1.356], "extents": [0.6, 0.6, 0.012], "rz": 0.0, "color": 13214247, "part": "tri", "gid": "T8", "shape": "prism", "base": [[3.2, 3.0], [2.6, 3.0], [3.2, 2.4]], "z0": 1.35, "z1": 1.362, "name": "T8", "opacity": 1.0, "label": "Tapa tri\u00e1ngulo catetos 0,60 m (arriba/abajo)", "movable": false}, {"type": "trap_lid", "center": [3.0, 2.8, 2.544], "extents": [0.6, 0.6, 0.012], "rz": 0.0, "color": 13214247, "part": "tri", "gid": "T8", "shape": "prism", "base": [[3.2, 3.0], [2.6, 3.0], [3.2, 2.4]], "z0": 2.538, "z1": 2.55, "name": "T8", "opacity": 1.0, "label": "Tapa tri\u00e1ngulo catetos 0,60 m (arriba/abajo)", "movable": false}, {"type": "desk", "center": [2.9000000000000004, 1.5, 0.755], "extents": [0.6, 1.7, 0.05], "rz": 0.0, "color": 12040119, "name": "Mueble1", "opacity": 1.0, "label": "Escritorio (referencia)", "movable": true}, {"type": "desk", "center": [2.9000000000000004, 0.85, 0.36], "extents": [0.55, 0.5, 0.72], "rz": 0.0, "color": 12040119, "name": "Mueble2", "opacity": 1.0, "label": "Escritorio (referencia)", "movable": true}, {"type": "desk", "center": [2.9000000000000004, 2.15, 0.36], "extents": [0.55, 0.5, 0.72], "rz": 0.0, "color": 12040119, "name": "Mueble3", "opacity": 1.0, "label": "Escritorio (referencia)", "movable": true}, {"type": "monitor", "center": [2.68, 1.18, 0.99], "extents": [0.07, 0.46, 0.3], "rz": 0.0, "color": 9408399, "name": "Mon1", "opacity": 1.0, "label": "Monitor (referencia)", "movable": true}, {"type": "monitor", "center": [2.68, 1.18, 0.86], "extents": [0.12, 0.24, 0.14], "rz": 0.0, "color": 9408399, "name": "Mon2", "opacity": 1.0, "label": "Monitor (referencia)", "movable": true}, {"type": "monitor", "center": [2.68, 1.82, 0.99], "extents": [0.07, 0.46, 0.3], "rz": 0.0, "color": 9408399, "name": "Mon3", "opacity": 1.0, "label": "Monitor (referencia)", "movable": true}, {"type": "monitor", "center": [2.68, 1.82, 0.86], "extents": [0.12, 0.24, 0.14], "rz": 0.0, "color": 9408399, "name": "Mon4", "opacity": 1.0, "label": "Monitor (referencia)", "movable": true}, {"type": "chair", "center": [1.9, 1.5, 0.45], "extents": [0.5, 0.5, 0.06], "rz": 0.0, "color": 13619151, "name": "Silla1", "opacity": 1.0, "label": "Silla (referencia)", "movable": true}, {"type": "chair", "center": [1.61, 1.5, 0.72], "extents": [0.08, 0.5, 0.55], "rz": 0.0, "color": 13619151, "name": "Silla2", "opacity": 1.0, "label": "Silla (referencia)", "movable": true}, {"type": "chair", "center": [1.9, 1.5, 0.16], "extents": [0.07, 0.07, 0.18], "rz": 0.0, "color": 13619151, "name": "Silla3", "opacity": 1.0, "label": "Silla (referencia)", "movable": true}, {"type": "chair", "center": [1.9, 1.5, 0.03], "extents": [0.4, 0.4, 0.04], "rz": 0.0, "color": 13619151, "name": "Silla4", "opacity": 1.0, "label": "Silla (referencia)", "movable": true}, {"type": "window", "center": [1.7, 2.985, 1.5], "extents": [1.2, 0.02, 1.2], "rz": 0.0, "color": 7648980, "name": "Vent1", "opacity": 1.0, "label": "Ventana (asumida) \u00b7 1,20 \u00d7 1,20 \u00b7 antepecho 0,90 m", "movable": true}, {"type": "door", "center": [0.55, 0.015, 1.0], "extents": [0.8, 0.02, 2.0], "rz": 0.0, "color": 11897682, "name": "Puerta1", "opacity": 1.0, "label": "Puerta (asumida) \u00b7 0,80 \u00d7 2,00 m", "movable": true}, {"type": "wall", "center": [1.6, 1.5, -0.04], "extents": [3.3000000000000003, 3.1, 0.08], "rz": 0.0, "color": 13684944, "name": "wall1", "opacity": 0.12, "label": "Muro", "movable": false}, {"type": "wall", "center": [0.025, 1.5, 1.5], "extents": [0.05, 3.05, 3.0], "rz": 0.0, "color": 13684944, "name": "wall2", "opacity": 0.12, "label": "Muro", "movable": false}, {"type": "wall", "center": [3.1750000000000003, 1.5, 1.5], "extents": [0.05, 3.05, 3.0], "rz": 0.0, "color": 13684944, "name": "wall3", "opacity": 0.12, "label": "Muro", "movable": false}, {"type": "wall", "center": [1.6, 0.025, 1.5], "extents": [3.25, 0.05, 3.0], "rz": 0.0, "color": 13684944, "name": "wall4", "opacity": 0.12, "label": "Muro", "movable": false}, {"type": "wall", "center": [1.6, 2.975, 1.5], "extents": [3.25, 0.05, 3.0], "rz": 0.0, "color": 13684944, "name": "wall5", "opacity": 0.12, "label": "Muro", "movable": false}];
 (function () {
   const stage = document.getElementById('stage');
   const errEl = document.getElementById('error');
@@ -100,33 +137,145 @@ const BOXES = [{"type": "panel", "center": [0.025, 0.6, 1.2], "extents": [0.05, 
   dl.position.set(5, 8, 4);
   escena.add(dl);
 
-  var grid = new THREE.GridHelper(4, 8, 0xbbbbbb, 0xe2e2e2);
-  grid.position.y = -0.001;
-  escena.add(grid);
-
   var L = 3.20, W = 3.00, H = 3.00;
   function R(c) { return [c[0], c[2], -c[1]]; }
+  function fromThree(p) { return [p.x, -p.z, p.y]; }
+  function fmt(v) { return (Math.round(v * 100) / 100).toFixed(2).replace('.', ','); }
   var ry = new THREE.Matrix4().makeRotationX(-Math.PI / 2);
 
-  var meshes = [];
-  BOXES.forEach(function (b) {
-    var geo = new THREE.BoxGeometry(b.extents[0], b.extents[1], b.extents[2]);
-    var mat = new THREE.MeshStandardMaterial({ color: b.color, transparent: true, opacity: b.opacity, roughness: 0.85 });
-    var mesh = new THREE.Mesh(geo, mat);
-    var rot = ry.clone().multiply(new THREE.Matrix4().makeRotationZ(b.rz * Math.PI / 180));
-    mesh.applyMatrix4(rot);
-    var c = R(b.center);
-    mesh.position.set(c[0], c[1], c[2]);
-    mesh.userData = { label: b.label, extents: b.extents };
-    escena.add(mesh);
-    meshes.push(mesh);
-    if (!b.wire) {
-      var edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo),
-        new THREE.LineBasicMaterial({ color: 0x222222, transparent: true, opacity: 0.55 }));
-      edges.applyMatrix4(rot);
-      edges.position.set(c[0], c[1], c[2]);
-      escena.add(edges);
+  function roomGrid() {
+    var step = 0.20, ptsFine = [], ptsM = [];
+    for (var x = 0; x <= L + 1e-6; x += step) {
+      var a = new THREE.Vector3(x, 0, 0), b = new THREE.Vector3(x, 0, -W);
+      (Math.abs(x - Math.round(x)) < 1e-6 ? ptsM : ptsFine).push(a, b);
     }
+    for (var z = 0; z <= W + 1e-6; z += step) {
+      var c = new THREE.Vector3(0, 0, -z), d = new THREE.Vector3(L, 0, -z);
+      (Math.abs(z - Math.round(z)) < 1e-6 ? ptsM : ptsFine).push(c, d);
+    }
+    var g1 = new THREE.BufferGeometry().setFromPoints(ptsFine);
+    var g2 = new THREE.BufferGeometry().setFromPoints(ptsM);
+    escena.add(new THREE.LineSegments(g1, new THREE.LineBasicMaterial({ color: 0xe4e7ee })));
+    escena.add(new THREE.LineSegments(g2, new THREE.LineBasicMaterial({ color: 0xb8becb })));
+  }
+  roomGrid();
+
+  var meter = new THREE.Mesh(
+    new THREE.BoxGeometry(1.0, 0.025, 0.08),
+    new THREE.MeshStandardMaterial({ color: 0x1f2a44, roughness: 0.7 })
+  );
+  var mp = R([0.5, 0.18, 0.012]);
+  meter.position.set(mp[0], mp[1], mp[2]);
+  escena.add(meter);
+
+  function makePrism(base, z0, z1) {
+    var v = [];
+    for (var i = 0; i < 3; i++) {
+      var lo = R([base[i][0], base[i][1], z0]);
+      v.push(lo[0], lo[1], lo[2]);
+    }
+    for (var i = 0; i < 3; i++) {
+      var hi = R([base[i][0], base[i][1], z1]);
+      v.push(hi[0], hi[1], hi[2]);
+    }
+    var idx = [0, 2, 1, 3, 4, 5, 0, 1, 4, 0, 4, 3, 1, 2, 5, 1, 5, 4, 2, 0, 3, 2, 3, 5];
+    var g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+    g.setIndex(idx);
+    g.computeVertexNormals();
+    return g;
+  }
+
+  function mkLbl(text, color, tag) {
+    var el = document.createElement('div');
+    el.className = tag ? 'lbl tag' : 'lbl';
+    el.style.color = color;
+    el.textContent = text;
+    stage.appendChild(el);
+    return el;
+  }
+
+  var meshes = [];
+  var movable = [];
+  var followLabs = [];
+  var groups = {};
+
+  function addEdges(mesh, geo) {
+    var edges = new THREE.LineSegments(
+      new THREE.EdgesGeometry(geo),
+      new THREE.LineBasicMaterial({ color: 0x222222, transparent: true, opacity: 0.55 })
+    );
+    mesh.add(edges);
+  }
+
+  BOXES.forEach(function (b) {
+    var geo, mesh;
+    var mat = new THREE.MeshStandardMaterial({
+      color: b.color, transparent: true, opacity: b.opacity, roughness: 0.85
+    });
+    if (b.shape === 'prism') {
+      geo = makePrism(b.base, b.z0, b.z1);
+      mesh = new THREE.Mesh(geo, mat);
+      mesh.userData.bakedWorld = true;
+    } else {
+      geo = new THREE.BoxGeometry(b.extents[0], b.extents[1], b.extents[2]);
+      mesh = new THREE.Mesh(geo, mat);
+      var rot = ry.clone().multiply(new THREE.Matrix4().makeRotationZ((b.rz || 0) * Math.PI / 180));
+      mesh.applyMatrix4(rot);
+      var c = R(b.center);
+      mesh.position.set(c[0], c[1], c[2]);
+    }
+    mesh.userData.label = b.label;
+    mesh.userData.extents = b.extents;
+    mesh.userData.type = b.type;
+    mesh.userData.name = b.name;
+    mesh.userData.movable = !!b.movable;
+    mesh.userData.gid = b.gid || null;
+    mesh.userData.note = b.shape === 'prism' ? 'prisma 0,60 × 0,60 × 1,20 m' : null;
+    mesh.userData.origin = mesh.position.clone();
+    mesh.userData.originQ = mesh.quaternion.clone();
+    if (b.type !== 'wall') addEdges(mesh, geo);
+    meshes.push(mesh);
+
+    if (b.gid) {
+      if (!groups[b.gid]) {
+        var g = new THREE.Group();
+        g.userData = {
+          label: 'Trampa — prisma 0,60 × 0,60 × 1,20 (lana + gabardina al frente)',
+          extents: [0.6, 0.6, 1.2], type: 'trap',
+          name: b.gid, movable: true, gid: b.gid
+        };
+        groups[b.gid] = g;
+        escena.add(g);
+        movable.push(g);
+        followLabs.push({ el: mkLbl(b.gid, '#c47208', true), mesh: g });
+      }
+      groups[b.gid].add(mesh);
+    } else {
+      escena.add(mesh);
+      if (b.movable) movable.push(mesh);
+      if (b.type === 'panel' || b.type === 'ceil') {
+        var col = b.type === 'ceil' ? '#2e7d46' : '#0f7878';
+        followLabs.push({ el: mkLbl(b.name, col, true), mesh: mesh });
+      }
+    }
+  });
+
+  Object.keys(groups).forEach(function (gid) {
+    var g = groups[gid];
+    var box = new THREE.Box3().setFromObject(g);
+    var center = box.getCenter(new THREE.Vector3());
+    g.children.forEach(function (ch) {
+      if (ch.userData && ch.userData.bakedWorld && ch.geometry) {
+        ch.geometry.translate(-center.x, -center.y, -center.z);
+        ch.geometry.computeVertexNormals();
+      } else {
+        ch.position.sub(center);
+      }
+    });
+    g.position.copy(center);
+    g.userData.origin = center.clone();
+    g.userData.originQ = g.quaternion.clone();
   });
 
   var roomEdges = new THREE.LineSegments(
@@ -135,15 +284,6 @@ const BOXES = [{"type": "panel", "center": [0.025, 0.6, 1.2], "extents": [0.05, 
   );
   roomEdges.position.set(L / 2, H / 2, -W / 2);
   escena.add(roomEdges);
-
-  function mkLbl(text, color) {
-    var el = document.createElement('div');
-    el.className = 'lbl';
-    el.style.color = color;
-    el.textContent = text;
-    stage.appendChild(el);
-    return el;
-  }
 
   var ox = R([0.28, 1.05, 0.02]);
   escena.add(new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(ox[0], ox[1], ox[2]), 1.15, 0xcc3333, 0.16, 0.10));
@@ -155,16 +295,122 @@ const BOXES = [{"type": "panel", "center": [0.025, 0.6, 1.2], "extents": [0.05, 
     { el: mkLbl('X = 3,20 m (largo)', '#cc3333'), pos: px(R([0.43, 1.05, 0.02])) },
     { el: mkLbl('Y = 3,00 m (ancho)', '#2a8033'), pos: px(R([0.28, 2.30, 0.02])) },
     { el: mkLbl('Z = 3,00 m (alto)', '#3355cc'), pos: px(R([0.28, 1.05, 1.27])) },
-    { el: mkLbl('3,20 m', '#1f2a44'), pos: px(R([L / 2, W - 0.6, 0])) },
-    { el: mkLbl('3,00 m', '#1f2a44'), pos: px(R([L - 0.6, W / 2, 0])) },
+    { el: mkLbl('3,20 m', '#1f2a44'), pos: px(R([L / 2, W - 0.55, 0])) },
+    { el: mkLbl('3,00 m', '#1f2a44'), pos: px(R([L - 0.55, W / 2, 0])) },
     { el: mkLbl('3,00 m', '#1f2a44'), pos: px(R([0.1, 0.1, H / 2])) },
-    { el: mkLbl('2 paneles techo · 0,42 m', '#2e7d46'), pos: px(R([L / 2, W / 2, H + 0.2])) }
+    { el: mkLbl('1,00 m', '#1f2a44'), pos: px(R([0.5, 0.42, 0.10])) },
+    { el: mkLbl('C1 · C2  (0,42 m del cielorraso)', '#2e7d46'), pos: px(R([L / 2, W / 2, H + 0.18])) }
   ];
 
   var controls = new THREE.OrbitControls(cam, renderer.domElement);
   cam.position.set(6.0, 2.8, 0.6);
   controls.target.set(2.4, H / 2, -W / 2);
   controls.update();
+
+  var transform = null;
+  var selected = null;
+  var ignoreClick = false;
+  var snapOn = true;
+
+  if (THREE.TransformControls) {
+    transform = new THREE.TransformControls(cam, renderer.domElement);
+    transform.setMode('translate');
+    transform.setSpace('world');
+    transform.setSize(0.85);
+    transform.setTranslationSnap(0.05);
+    escena.add(transform);
+    transform.addEventListener('dragging-changed', function (ev) {
+      controls.enabled = !ev.value;
+      if (!ev.value) ignoreClick = true;
+    });
+    transform.addEventListener('objectChange', function () {
+      if (snapOn && selected) snapMesh(selected);
+      updateInspector();
+    });
+  }
+
+  function snapMesh(mesh) {
+    var room = fromThree(mesh.position);
+    for (var i = 0; i < 3; i++) room[i] = Math.round(room[i] / 0.05) * 0.05;
+    var t = R(room);
+    mesh.position.set(t[0], t[1], t[2]);
+  }
+
+  function pickRoot(obj) {
+    var o = obj;
+    while (o && o.parent && o.parent.userData && o.parent.userData.gid) o = o.parent;
+    if (o && o.userData && o.userData.movable) return o;
+    return (obj && obj.userData && obj.userData.movable) ? obj : null;
+  }
+
+  function selectMesh(mesh) {
+    selected = mesh || null;
+    meshes.forEach(function (m) { m.material.emissive.setHex(0x000000); });
+    followLabs.forEach(function (lb) {
+      if (lb.el.classList) lb.el.classList.toggle('on', selected && lb.mesh === selected);
+    });
+    if (selected) {
+      if (selected.isGroup) {
+        selected.children.forEach(function (ch) {
+          if (ch.material && ch.material.emissive) ch.material.emissive.setHex(0x334455);
+        });
+      } else {
+        selected.material.emissive.setHex(0x334455);
+      }
+    }
+    if (transform) {
+      if (selected && selected.userData.movable) transform.attach(selected);
+      else transform.detach();
+    }
+    updateInspector();
+  }
+
+  function updateInspector() {
+    var nameEl = document.getElementById('insp-name');
+    var hintEl = document.getElementById('insp-hint');
+    var sizeEl = document.getElementById('insp-size');
+    var relEl = document.getElementById('insp-rel');
+    var posEl = document.getElementById('insp-pos');
+    if (!selected) {
+      nameEl.textContent = 'Ningún objeto seleccionado';
+      hintEl.style.display = 'block';
+      sizeEl.textContent = '';
+      relEl.textContent = '';
+      posEl.textContent = '';
+      return;
+    }
+    hintEl.style.display = 'none';
+    var u = selected.userData;
+    var e = u.extents || [0, 0, 0];
+    var room = fromThree(selected.position);
+    nameEl.textContent = u.name + ' — ' + u.label;
+    sizeEl.textContent = 'Tamaño (fijo): ' + fmt(e[0]) + ' × ' + fmt(e[1]) + ' × ' + fmt(e[2]) + ' m';
+    relEl.textContent = 'Respecto del recinto: ' +
+      Math.round(e[0] / L * 100) + '% del largo (3,20), ' +
+      Math.round(e[1] / W * 100) + '% del ancho (3,00), ' +
+      Math.round(e[2] / H * 100) + '% del alto (3,00)';
+    posEl.textContent = 'Centro: X ' + fmt(room[0]) + '   Y ' + fmt(room[1]) + '   Z ' + fmt(room[2]) + ' m';
+  }
+
+  function restoreMesh(mesh) {
+    mesh.position.copy(mesh.userData.origin);
+    if (mesh.userData.originQ) mesh.quaternion.copy(mesh.userData.originQ);
+  }
+
+  document.getElementById('btn-reset-one').addEventListener('click', function () {
+    if (selected) { restoreMesh(selected); updateInspector(); }
+  });
+  document.getElementById('btn-reset-all').addEventListener('click', function () {
+    movable.forEach(restoreMesh);
+    updateInspector();
+  });
+  document.getElementById('chk-snap').addEventListener('change', function (e) {
+    snapOn = e.target.checked;
+    if (transform) transform.setTranslationSnap(snapOn ? 0.05 : null);
+  });
+  document.getElementById('chk-tags').addEventListener('change', function (e) {
+    followLabs.forEach(function (lb) { lb.el.style.visibility = e.target.checked ? 'visible' : 'hidden'; });
+  });
 
   function goView(v) {
     if (v === 'zoomin' || v === 'zoomout') {
@@ -195,14 +441,21 @@ const BOXES = [{"type": "panel", "center": [0.025, 0.6, 1.2], "extents": [0.05, 
     b.addEventListener('click', function () { goView(b.dataset.v); });
   });
 
-  function refreshLabels() {
+  function projectEl(el, vec) {
     var r = stage.getBoundingClientRect();
-    labs.forEach(function (lb) {
-      var v = lb.pos.clone().project(cam);
-      if (v.z > 1) { lb.el.style.display = 'none'; return; }
-      lb.el.style.display = 'block';
-      lb.el.style.left = (r.left + (v.x + 1) * r.width / 2) + 'px';
-      lb.el.style.top = (r.top + (1 - v.y) * r.height / 2) + 'px';
+    var v = vec.clone().project(cam);
+    if (v.z > 1) { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    el.style.left = ((v.x + 1) * r.width / 2) + 'px';
+    el.style.top = ((1 - v.y) * r.height / 2) + 'px';
+  }
+
+  function refreshLabels() {
+    labs.forEach(function (lb) { projectEl(lb.el, lb.pos); });
+    followLabs.forEach(function (lb) {
+      var p = new THREE.Vector3();
+      lb.mesh.getWorldPosition(p);
+      projectEl(lb.el, p);
     });
   }
   controls.addEventListener('change', refreshLabels);
@@ -211,23 +464,75 @@ const BOXES = [{"type": "panel", "center": [0.025, 0.6, 1.2], "extents": [0.05, 
   var raycaster = new THREE.Raycaster();
   var pointer = new THREE.Vector2();
   var tooltip = document.getElementById('tooltip');
+  var downPt = null;
 
-  renderer.domElement.addEventListener('pointermove', function (e) {
+  function setPointer(e) {
     var r = stage.getBoundingClientRect();
     pointer.x = ((e.clientX - r.left) / r.width) * 2 - 1;
     pointer.y = -((e.clientY - r.top) / r.height) * 2 + 1;
     raycaster.setFromCamera(pointer, cam);
+  }
+
+  renderer.domElement.addEventListener('pointermove', function (e) {
+    setPointer(e);
     var hit = raycaster.intersectObjects(meshes)[0];
-    if (hit) {
+    if (hit && hit.object.userData.type !== 'wall') {
       var u = hit.object.userData;
-      var sizes = u.extents.map(function (v) { return (Math.round(v * 100) / 100) + ' m'; }).join(' × ');
+      var root = pickRoot(hit.object);
+      var sizes = u.note || (u.extents ? u.extents.map(function (v) { return fmt(v) + ' m'; }).join(' × ') : '');
       tooltip.style.display = 'block';
-      tooltip.textContent = u.label + '  ·  ' + sizes;
-      meshes.forEach(function (m) { m.material.emissive.setHex(m === hit.object ? 0x223344 : 0x000000); });
+      tooltip.textContent = ((root && root.userData.name) ? root.userData.name + ' · ' : '') + u.label + (sizes ? '  ·  ' + sizes : '');
+      meshes.forEach(function (m) {
+        if (selected && (m === selected || m.parent === selected)) return;
+        m.material.emissive.setHex(m === hit.object ? 0x223344 : 0x000000);
+      });
     } else {
       tooltip.style.display = 'none';
-      meshes.forEach(function (m) { m.material.emissive.setHex(0x000000); });
+      meshes.forEach(function (m) {
+        if (selected && (m === selected || m.parent === selected)) return;
+        m.material.emissive.setHex(0x000000);
+      });
     }
+  });
+
+  renderer.domElement.addEventListener('pointerdown', function (e) {
+    downPt = { x: e.clientX, y: e.clientY };
+  });
+  renderer.domElement.addEventListener('pointerup', function (e) {
+    if (ignoreClick) { ignoreClick = false; downPt = null; return; }
+    if (!downPt) return;
+    var dist = Math.hypot(e.clientX - downPt.x, e.clientY - downPt.y);
+    downPt = null;
+    if (dist > 6) return;
+    setPointer(e);
+    var hits = raycaster.intersectObjects(movable, true);
+    var root = null;
+    for (var i = 0; i < hits.length; i++) {
+      root = pickRoot(hits[i].object);
+      if (root) break;
+    }
+    selectMesh(root);
+  });
+
+  addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { selectMesh(null); return; }
+    if (!selected) return;
+    var step = e.shiftKey ? 0.20 : 0.05;
+    var room = fromThree(selected.position);
+    var moved = true;
+    if (e.key === 'ArrowLeft') room[0] -= step;
+    else if (e.key === 'ArrowRight') room[0] += step;
+    else if (e.key === 'ArrowUp') room[1] += step;
+    else if (e.key === 'ArrowDown') room[1] -= step;
+    else if (e.key === 'PageUp') room[2] += step;
+    else if (e.key === 'PageDown') room[2] -= step;
+    else moved = false;
+    if (!moved) return;
+    e.preventDefault();
+    var t = R(room);
+    selected.position.set(t[0], t[1], t[2]);
+    if (snapOn) snapMesh(selected);
+    updateInspector();
   });
 
   addEventListener('resize', function () {
@@ -240,6 +545,7 @@ const BOXES = [{"type": "panel", "center": [0.025, 0.6, 1.2], "extents": [0.05, 
   (function animate() {
     requestAnimationFrame(animate);
     controls.update();
+    refreshLabels();
     renderer.render(escena, cam);
   })();
 })();

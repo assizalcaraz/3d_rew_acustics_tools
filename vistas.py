@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon, Arc, Rectangle
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
-from geometria import (PANELS, TRAPS, FURN, SHELL, box_corners, L, W, H)
+from geometria import (PANELS, TRAPS, FURN, SHELL, item_corners, L, W, H)
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 DPI = 160
@@ -33,7 +33,7 @@ def convex_hull(pts):
 
 
 def project(box, view):
-    c = box_corners(box["center"], box["extents"], box.get("rz", 0.0))
+    c = item_corners(box)
     pairs = c.T.tolist()
     if view == "xy":
         return [(p[0], p[1]) for p in pairs]
@@ -89,7 +89,10 @@ for p in PANELS:
         draw_box(ax, p, "xy", "#16a2a2", ec="#0f7878", alpha=0.8)
 
 for t in TRAPS:
-    draw_box(ax, t, "xy", "#f08c0a", ec="#c47208", alpha=0.85)
+    if t["type"] == "trap":
+        draw_box(ax, t, "xy", "#f08c0a", ec="#c47208", alpha=0.85)
+    else:
+        draw_box(ax, t, "xy", "#c9a227", ec="#9a7a1a", alpha=0.9, zorder=4)
 
 for f in FURN:
     if f["type"] in ("desk", "chair"):
@@ -176,7 +179,19 @@ ax.set_title("VISTA AXONOMÉTRICA - modelo paramétrico (medidas reales)", fonts
 
 
 def draw_box_3d(ax, box, color, alpha=1.0, lw=0.4, ec="#333333"):
-    c = box_corners(box["center"], box["extents"], box.get("rz", 0.0)).T.tolist()
+    if box.get("shape") == "prism":
+        v = item_corners(box).T.tolist()
+        faces = [
+            [v[0], v[2], v[4]],
+            [v[1], v[5], v[3]],
+            [v[0], v[1], v[3], v[2]],
+            [v[2], v[3], v[5], v[4]],
+            [v[4], v[5], v[1], v[0]],
+        ]
+        ax.add_collection3d(Poly3DCollection(faces, facecolor=color, alpha=alpha, linewidths=lw,
+                                             edgecolors=ec, zsort="max"))
+        return
+    c = item_corners(box).T.tolist()
     faces = [[0, 1, 3, 2], [4, 6, 7, 5], [0, 4, 5, 1], [2, 3, 7, 6], [0, 2, 6, 4], [1, 5, 7, 3]]
     quads = [[c[i] for i in f] for f in faces]
     ax.add_collection3d(Poly3DCollection(quads, facecolor=color, alpha=alpha, linewidths=lw,
@@ -200,7 +215,7 @@ for f in FURN:
 for p in PANELS:
     draw_box_3d(ax, p, "#16a2a2" if p["type"] == "panel" else "#3f9b5a")
 for t in TRAPS:
-    draw_box_3d(ax, t, "#f08c0a")
+    draw_box_3d(ax, t, "#f08c0a" if t["type"] == "trap" else "#c9a227")
 
 ax.set_box_aspect((L, W, H))
 ax.set_xlim(0, L); ax.set_ylim(0, W); ax.set_zlim(0, H)

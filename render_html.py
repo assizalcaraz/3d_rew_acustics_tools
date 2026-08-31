@@ -6,33 +6,55 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 with open(os.path.join(BASE, "modelo_acustico.json")) as f:
     boxes = json.load(f)
 
-COLOR = {"panel": 0x16a2a2, "ceil": 0x3f9b5a, "trap": 0xf08c0a, "wall": 0xd0d0d0,
-         "window": 0x74b6d4, "door": 0xb58b52, "desk": 0xb7b7b7, "monitor": 0x8f8f8f,
-         "chair": 0xcfcfcf}
-LABEL = {"panel": "Panel 50 mm · 1,20 x 0,60 m",
-         "ceil": "Panel de techo colgado · 1,20 x 0,60 m (a 0,42 m del cielorraso)",
-         "trap": "Trampa de esquina 100 mm · 1,20 x 0,60 m",
-         "window": "Ventana (asumida) · 1,20 x 1,20 · antepecho 0,90 m",
-         "door": "Puerta (asumida) · 0,80 x 2,00 m",
+COLOR = {"panel": 0x16a2a2, "ceil": 0x3f9b5a, "trap": 0xf08c0a, "trap_lid": 0xc9a227,
+         "wall": 0xd0d0d0, "window": 0x74b6d4, "door": 0xb58b52, "desk": 0xb7b7b7,
+         "monitor": 0x8f8f8f, "chair": 0xcfcfcf}
+LABEL = {"panel": "Panel de pared 50 mm · 1,20 × 0,60 m",
+         "ceil": "Cloud de techo · 1,20 × 0,60 × 0,05 m · colgado 0,42 m",
+         "trap": "Trampa — prisma 0,60 × 0,60 × 1,20 (lana + gabardina al frente)",
+         "trap_lid": "Tapa fenólica de trampa",
+         "window": "Ventana (asumida) · 1,20 × 1,20 · antepecho 0,90 m",
+         "door": "Puerta (asumida) · 0,80 × 2,00 m",
          "desk": "Escritorio (referencia)",
          "monitor": "Monitor (referencia)",
          "chair": "Silla (referencia)",
          "wall": "Muro"}
+SHORT = {"panel": "P", "ceil": "C", "trap": "T", "desk": "Mueble",
+         "monitor": "Mon", "chair": "Silla", "window": "Vent", "door": "Puerta"}
+MOVABLE = {"panel", "ceil", "trap", "desk", "monitor", "chair", "window", "door"}
 
+counters = {}
 for b in boxes:
-    b["color"] = COLOR.get(b["type"], 0x999999)
-    b["opacity"] = 0.12 if b["type"] == "wall" else 1.0
-    b["label"] = LABEL.get(b["type"], b["type"])
+    t = b["type"]
+    if t == "trap_lid":
+        b["name"] = b.get("gid", "Tapa")
+        b["color"] = COLOR["trap_lid"]
+        b["opacity"] = 1.0
+        b["label"] = ("Tapa triángulo catetos 0,60 m (arriba/abajo)"
+                      if b.get("part") == "tri" or b.get("shape") == "prism"
+                      else "Tapa rectángulo 0,60 × 1,20 m (contra muro)")
+        b["movable"] = False
+        continue
+    counters[t] = counters.get(t, 0) + 1
+    n = counters[t]
+    prefix = SHORT.get(t, t)
+    b["name"] = b.get("gid") if t == "trap" and b.get("gid") else "{}{}".format(prefix, n)
+    b["color"] = COLOR.get(t, 0x999999)
+    b["opacity"] = 0.12 if t == "wall" else 1.0
+    b["label"] = LABEL.get(t, t)
+    b["movable"] = t in MOVABLE
 
 DATA = json.dumps(boxes).replace("<", "\\u003c")
 
-HTML_DOC = """<!DOCTYPE html>
+HTML_DOC = r"""<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="utf-8">
 <title>Modelo acústico - Opción B</title>
 <style>
   html,body{margin:0;height:100%;font-family:system-ui,sans-serif;background:#f4f5f7}
+  html.embed #side{display:none}
+  html.embed #app{display:block;height:100%}
   #app{display:flex;height:100%}
   #stage{position:relative;flex:1;min-width:0}
   canvas{display:block}
@@ -44,12 +66,24 @@ HTML_DOC = """<!DOCTYPE html>
   #side p{font-size:11px;color:#8891a3;margin:0 0 12px}
   #info{position:absolute;top:12px;left:12px;background:rgba(255,255,255,.95);
         border:1px solid #dfe2e8;border-radius:10px;padding:12px 16px;font-size:13px;
-        box-shadow:0 2px 8px rgba(0,0,0,.08);max-width:300px;z-index:5}
+        box-shadow:0 2px 8px rgba(0,0,0,.08);max-width:320px;z-index:5}
   #info h1{font-size:15px;margin:0 0 6px;color:#1f2a44}
   #info p{margin:2px 0;color:#444}
   .sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+  #inspector{position:absolute;bottom:44px;left:12px;background:rgba(255,255,255,.96);
+        border:1px solid #dfe2e8;border-radius:10px;padding:12px 16px;font-size:13px;
+        box-shadow:0 2px 8px rgba(0,0,0,.08);min-width:280px;max-width:360px;z-index:5}
+  #inspector h2{font-size:13px;margin:0 0 6px;color:#1f2a44}
+  #inspector .muted{color:#8891a3;font-size:12px;margin:0 0 8px}
+  #inspector .pos{font-variant-numeric:tabular-nums;font-family:ui-monospace,Menlo,monospace;font-size:12px}
+  #inspector kbd{background:#eef2fb;border:1px solid #cfd4de;border-radius:4px;padding:1px 5px;font-size:11px}
+  #insp-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+  #insp-actions button,.chk{background:#fff;border:1px solid #cfd4de;border-radius:8px;
+        padding:6px 10px;font-size:12px;cursor:pointer;color:#1f2a44}
+  #insp-actions button:hover{background:#eef2fb;border-color:#9fb0d8}
+  .chk{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
   #views{position:absolute;top:12px;right:12px;display:flex;gap:6px;z-index:5;flex-wrap:wrap;
-         justify-content:flex-end}
+         justify-content:flex-end;max-width:55%}
   #views button{background:#fff;border:1px solid #cfd4de;border-radius:8px;padding:7px 12px;
          font-size:12px;cursor:pointer;color:#1f2a44;box-shadow:0 1px 3px rgba(0,0,0,.08)}
   #views button:hover{background:#eef2fb;border-color:#9fb0d8}
@@ -62,6 +96,9 @@ HTML_DOC = """<!DOCTYPE html>
          color:#b00020;font-size:14px;display:none;z-index:10;box-shadow:0 4px 16px rgba(0,0,0,.15)}
   .lbl{position:absolute;pointer-events:none;font-size:12px;font-weight:600;color:#1f2a44;
        transform:translate(-50%,-50%);text-shadow:0 1px 2px #fff;z-index:3}
+  .lbl.tag{font-size:11px;background:rgba(255,255,255,.9);padding:1px 5px;border-radius:4px;
+       border:1px solid #cfd4de;font-weight:700;text-shadow:none}
+  .lbl.tag.on{background:#1f2a44;color:#fff;border-color:#1f2a44}
 </style>
 </head>
 <body>
@@ -69,11 +106,12 @@ HTML_DOC = """<!DOCTYPE html>
   <div id="stage">
     <div id="info">
       <h1>Modelado acústico — Opción B</h1>
-      <p>Habitación <b>3,20 × 3,00 × 3,00 m</b> (alto asumido) · ejes: X largo · Y ancho · Z altura</p>
-      <p><span class="sw" style="background:#16a2a2"></span>12 paneles 50 mm (1,20 × 0,60)</p>
-      <p><span class="sw" style="background:#f08c0a"></span>8 trampas de esquina 100 mm</p>
-      <p><span class="sw" style="background:#3f9b5a"></span>2 paneles de techo colgados</p>
-      <p style="margin-top:6px;color:#8891a3">FRENTE = pared de los monitores. Rotá click-arrastre · zoom rueda · mouse sobre un panel = medidas</p>
+      <p>Habitación <b>3,20 × 3,00 × 3,00 m</b> · escala 1:1 (1 unidad = 1 m)</p>
+      <p><span class="sw" style="background:#16a2a2"></span>10 paneles de pared 50 mm (1,20 × 0,60)</p>
+      <p><span class="sw" style="background:#3f9b5a"></span>2 clouds C1·C2 (1,20 × 0,60)</p>
+      <p><span class="sw" style="background:#f08c0a"></span>8 trampas prisma T1–T8 (0,60 × 0,60 × 1,20)</p>
+      <p><span class="sw" style="background:#c9a227"></span>tapas fenólicas: 16 □ + 16 △</p>
+      <p style="margin-top:6px;color:#8891a3">Click un objeto para moverlo (flechas). Órbita: arrastrar el vacío. Rejilla del piso = 0,20 m; barra negra = 1,00 m.</p>
     </div>
     <div id="views">
       <button data-v="front" title="Frente = pared de los monitores">FRENTE</button>
@@ -85,22 +123,41 @@ HTML_DOC = """<!DOCTYPE html>
       <button data-v="zoomout" title="Alejar">−</button>
       <button data-v="zoomin" title="Acercar">+</button>
     </div>
+    <div id="inspector">
+      <h2 id="insp-name">Ningún objeto seleccionado</h2>
+      <p class="muted" id="insp-hint">Click en un panel, cloud, trampa o mueble. Los muros no se mueven. El tamaño no se escala: solo se traslada. Una trampa se mueve entera (prisma + 4 tapas).</p>
+      <p class="pos" id="insp-size"></p>
+      <p class="pos" id="insp-rel"></p>
+      <p class="pos" id="insp-pos"></p>
+      <div id="insp-actions">
+        <button type="button" id="btn-reset-one">Restaurar este</button>
+        <button type="button" id="btn-reset-all">Restaurar todos</button>
+        <label class="chk"><input type="checkbox" id="chk-snap" checked> Snap 5 cm</label>
+        <label class="chk"><input type="checkbox" id="chk-tags" checked> Etiquetas</label>
+      </div>
+    </div>
     <div id="tooltip"></div>
-    <div id="hint">Modelo paramétrico — medidas reales (sin escala)</div>
+    <div id="hint">Esc suelta · flechas = 5 cm · Shift+flechas = 20 cm · PageUp/Down = altura</div>
     <div id="error"></div>
   </div>
   <div id="side">
     <h2>Renders ilustrativos</h2>
     <img src="foto_1.jpg" alt="Render ilustrativo 1">
-    <p>Render generado con IA — referencia estética</p>
+    <p>Render generado con IA — referencia estética (no es el modelo a escala)</p>
     <img src="foto_2.jpg" alt="Render ilustrativo 2">
-    <p>Render generado con IA — referencia estética</p>
+    <p>Render generado con IA — referencia estética (no es el modelo a escala)</p>
   </div>
 </div>
 
 <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
 <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/controls/TransformControls.js"></script>
 <script>
+if (location.search.indexOf('embed=1') !== -1) {
+  document.documentElement.classList.add('embed');
+  var side = document.getElementById('side');
+  if (side) side.style.display = 'none';
+}
 const BOXES = __BOXES__;
 (function () {
   const stage = document.getElementById('stage');
@@ -128,33 +185,145 @@ const BOXES = __BOXES__;
   dl.position.set(5, 8, 4);
   escena.add(dl);
 
-  var grid = new THREE.GridHelper(4, 8, 0xbbbbbb, 0xe2e2e2);
-  grid.position.y = -0.001;
-  escena.add(grid);
-
   var L = 3.20, W = 3.00, H = 3.00;
   function R(c) { return [c[0], c[2], -c[1]]; }
+  function fromThree(p) { return [p.x, -p.z, p.y]; }
+  function fmt(v) { return (Math.round(v * 100) / 100).toFixed(2).replace('.', ','); }
   var ry = new THREE.Matrix4().makeRotationX(-Math.PI / 2);
 
-  var meshes = [];
-  BOXES.forEach(function (b) {
-    var geo = new THREE.BoxGeometry(b.extents[0], b.extents[1], b.extents[2]);
-    var mat = new THREE.MeshStandardMaterial({ color: b.color, transparent: true, opacity: b.opacity, roughness: 0.85 });
-    var mesh = new THREE.Mesh(geo, mat);
-    var rot = ry.clone().multiply(new THREE.Matrix4().makeRotationZ(b.rz * Math.PI / 180));
-    mesh.applyMatrix4(rot);
-    var c = R(b.center);
-    mesh.position.set(c[0], c[1], c[2]);
-    mesh.userData = { label: b.label, extents: b.extents };
-    escena.add(mesh);
-    meshes.push(mesh);
-    if (!b.wire) {
-      var edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo),
-        new THREE.LineBasicMaterial({ color: 0x222222, transparent: true, opacity: 0.55 }));
-      edges.applyMatrix4(rot);
-      edges.position.set(c[0], c[1], c[2]);
-      escena.add(edges);
+  function roomGrid() {
+    var step = 0.20, ptsFine = [], ptsM = [];
+    for (var x = 0; x <= L + 1e-6; x += step) {
+      var a = new THREE.Vector3(x, 0, 0), b = new THREE.Vector3(x, 0, -W);
+      (Math.abs(x - Math.round(x)) < 1e-6 ? ptsM : ptsFine).push(a, b);
     }
+    for (var z = 0; z <= W + 1e-6; z += step) {
+      var c = new THREE.Vector3(0, 0, -z), d = new THREE.Vector3(L, 0, -z);
+      (Math.abs(z - Math.round(z)) < 1e-6 ? ptsM : ptsFine).push(c, d);
+    }
+    var g1 = new THREE.BufferGeometry().setFromPoints(ptsFine);
+    var g2 = new THREE.BufferGeometry().setFromPoints(ptsM);
+    escena.add(new THREE.LineSegments(g1, new THREE.LineBasicMaterial({ color: 0xe4e7ee })));
+    escena.add(new THREE.LineSegments(g2, new THREE.LineBasicMaterial({ color: 0xb8becb })));
+  }
+  roomGrid();
+
+  var meter = new THREE.Mesh(
+    new THREE.BoxGeometry(1.0, 0.025, 0.08),
+    new THREE.MeshStandardMaterial({ color: 0x1f2a44, roughness: 0.7 })
+  );
+  var mp = R([0.5, 0.18, 0.012]);
+  meter.position.set(mp[0], mp[1], mp[2]);
+  escena.add(meter);
+
+  function makePrism(base, z0, z1) {
+    var v = [];
+    for (var i = 0; i < 3; i++) {
+      var lo = R([base[i][0], base[i][1], z0]);
+      v.push(lo[0], lo[1], lo[2]);
+    }
+    for (var i = 0; i < 3; i++) {
+      var hi = R([base[i][0], base[i][1], z1]);
+      v.push(hi[0], hi[1], hi[2]);
+    }
+    var idx = [0, 2, 1, 3, 4, 5, 0, 1, 4, 0, 4, 3, 1, 2, 5, 1, 5, 4, 2, 0, 3, 2, 3, 5];
+    var g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+    g.setIndex(idx);
+    g.computeVertexNormals();
+    return g;
+  }
+
+  function mkLbl(text, color, tag) {
+    var el = document.createElement('div');
+    el.className = tag ? 'lbl tag' : 'lbl';
+    el.style.color = color;
+    el.textContent = text;
+    stage.appendChild(el);
+    return el;
+  }
+
+  var meshes = [];
+  var movable = [];
+  var followLabs = [];
+  var groups = {};
+
+  function addEdges(mesh, geo) {
+    var edges = new THREE.LineSegments(
+      new THREE.EdgesGeometry(geo),
+      new THREE.LineBasicMaterial({ color: 0x222222, transparent: true, opacity: 0.55 })
+    );
+    mesh.add(edges);
+  }
+
+  BOXES.forEach(function (b) {
+    var geo, mesh;
+    var mat = new THREE.MeshStandardMaterial({
+      color: b.color, transparent: true, opacity: b.opacity, roughness: 0.85
+    });
+    if (b.shape === 'prism') {
+      geo = makePrism(b.base, b.z0, b.z1);
+      mesh = new THREE.Mesh(geo, mat);
+      mesh.userData.bakedWorld = true;
+    } else {
+      geo = new THREE.BoxGeometry(b.extents[0], b.extents[1], b.extents[2]);
+      mesh = new THREE.Mesh(geo, mat);
+      var rot = ry.clone().multiply(new THREE.Matrix4().makeRotationZ((b.rz || 0) * Math.PI / 180));
+      mesh.applyMatrix4(rot);
+      var c = R(b.center);
+      mesh.position.set(c[0], c[1], c[2]);
+    }
+    mesh.userData.label = b.label;
+    mesh.userData.extents = b.extents;
+    mesh.userData.type = b.type;
+    mesh.userData.name = b.name;
+    mesh.userData.movable = !!b.movable;
+    mesh.userData.gid = b.gid || null;
+    mesh.userData.note = b.shape === 'prism' ? 'prisma 0,60 × 0,60 × 1,20 m' : null;
+    mesh.userData.origin = mesh.position.clone();
+    mesh.userData.originQ = mesh.quaternion.clone();
+    if (b.type !== 'wall') addEdges(mesh, geo);
+    meshes.push(mesh);
+
+    if (b.gid) {
+      if (!groups[b.gid]) {
+        var g = new THREE.Group();
+        g.userData = {
+          label: 'Trampa — prisma 0,60 × 0,60 × 1,20 (lana + gabardina al frente)',
+          extents: [0.6, 0.6, 1.2], type: 'trap',
+          name: b.gid, movable: true, gid: b.gid
+        };
+        groups[b.gid] = g;
+        escena.add(g);
+        movable.push(g);
+        followLabs.push({ el: mkLbl(b.gid, '#c47208', true), mesh: g });
+      }
+      groups[b.gid].add(mesh);
+    } else {
+      escena.add(mesh);
+      if (b.movable) movable.push(mesh);
+      if (b.type === 'panel' || b.type === 'ceil') {
+        var col = b.type === 'ceil' ? '#2e7d46' : '#0f7878';
+        followLabs.push({ el: mkLbl(b.name, col, true), mesh: mesh });
+      }
+    }
+  });
+
+  Object.keys(groups).forEach(function (gid) {
+    var g = groups[gid];
+    var box = new THREE.Box3().setFromObject(g);
+    var center = box.getCenter(new THREE.Vector3());
+    g.children.forEach(function (ch) {
+      if (ch.userData && ch.userData.bakedWorld && ch.geometry) {
+        ch.geometry.translate(-center.x, -center.y, -center.z);
+        ch.geometry.computeVertexNormals();
+      } else {
+        ch.position.sub(center);
+      }
+    });
+    g.position.copy(center);
+    g.userData.origin = center.clone();
+    g.userData.originQ = g.quaternion.clone();
   });
 
   var roomEdges = new THREE.LineSegments(
@@ -163,15 +332,6 @@ const BOXES = __BOXES__;
   );
   roomEdges.position.set(L / 2, H / 2, -W / 2);
   escena.add(roomEdges);
-
-  function mkLbl(text, color) {
-    var el = document.createElement('div');
-    el.className = 'lbl';
-    el.style.color = color;
-    el.textContent = text;
-    stage.appendChild(el);
-    return el;
-  }
 
   var ox = R([0.28, 1.05, 0.02]);
   escena.add(new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(ox[0], ox[1], ox[2]), 1.15, 0xcc3333, 0.16, 0.10));
@@ -183,16 +343,122 @@ const BOXES = __BOXES__;
     { el: mkLbl('X = 3,20 m (largo)', '#cc3333'), pos: px(R([0.43, 1.05, 0.02])) },
     { el: mkLbl('Y = 3,00 m (ancho)', '#2a8033'), pos: px(R([0.28, 2.30, 0.02])) },
     { el: mkLbl('Z = 3,00 m (alto)', '#3355cc'), pos: px(R([0.28, 1.05, 1.27])) },
-    { el: mkLbl('3,20 m', '#1f2a44'), pos: px(R([L / 2, W - 0.6, 0])) },
-    { el: mkLbl('3,00 m', '#1f2a44'), pos: px(R([L - 0.6, W / 2, 0])) },
+    { el: mkLbl('3,20 m', '#1f2a44'), pos: px(R([L / 2, W - 0.55, 0])) },
+    { el: mkLbl('3,00 m', '#1f2a44'), pos: px(R([L - 0.55, W / 2, 0])) },
     { el: mkLbl('3,00 m', '#1f2a44'), pos: px(R([0.1, 0.1, H / 2])) },
-    { el: mkLbl('2 paneles techo · 0,42 m', '#2e7d46'), pos: px(R([L / 2, W / 2, H + 0.2])) }
+    { el: mkLbl('1,00 m', '#1f2a44'), pos: px(R([0.5, 0.42, 0.10])) },
+    { el: mkLbl('C1 · C2  (0,42 m del cielorraso)', '#2e7d46'), pos: px(R([L / 2, W / 2, H + 0.18])) }
   ];
 
   var controls = new THREE.OrbitControls(cam, renderer.domElement);
   cam.position.set(6.0, 2.8, 0.6);
   controls.target.set(2.4, H / 2, -W / 2);
   controls.update();
+
+  var transform = null;
+  var selected = null;
+  var ignoreClick = false;
+  var snapOn = true;
+
+  if (THREE.TransformControls) {
+    transform = new THREE.TransformControls(cam, renderer.domElement);
+    transform.setMode('translate');
+    transform.setSpace('world');
+    transform.setSize(0.85);
+    transform.setTranslationSnap(0.05);
+    escena.add(transform);
+    transform.addEventListener('dragging-changed', function (ev) {
+      controls.enabled = !ev.value;
+      if (!ev.value) ignoreClick = true;
+    });
+    transform.addEventListener('objectChange', function () {
+      if (snapOn && selected) snapMesh(selected);
+      updateInspector();
+    });
+  }
+
+  function snapMesh(mesh) {
+    var room = fromThree(mesh.position);
+    for (var i = 0; i < 3; i++) room[i] = Math.round(room[i] / 0.05) * 0.05;
+    var t = R(room);
+    mesh.position.set(t[0], t[1], t[2]);
+  }
+
+  function pickRoot(obj) {
+    var o = obj;
+    while (o && o.parent && o.parent.userData && o.parent.userData.gid) o = o.parent;
+    if (o && o.userData && o.userData.movable) return o;
+    return (obj && obj.userData && obj.userData.movable) ? obj : null;
+  }
+
+  function selectMesh(mesh) {
+    selected = mesh || null;
+    meshes.forEach(function (m) { m.material.emissive.setHex(0x000000); });
+    followLabs.forEach(function (lb) {
+      if (lb.el.classList) lb.el.classList.toggle('on', selected && lb.mesh === selected);
+    });
+    if (selected) {
+      if (selected.isGroup) {
+        selected.children.forEach(function (ch) {
+          if (ch.material && ch.material.emissive) ch.material.emissive.setHex(0x334455);
+        });
+      } else {
+        selected.material.emissive.setHex(0x334455);
+      }
+    }
+    if (transform) {
+      if (selected && selected.userData.movable) transform.attach(selected);
+      else transform.detach();
+    }
+    updateInspector();
+  }
+
+  function updateInspector() {
+    var nameEl = document.getElementById('insp-name');
+    var hintEl = document.getElementById('insp-hint');
+    var sizeEl = document.getElementById('insp-size');
+    var relEl = document.getElementById('insp-rel');
+    var posEl = document.getElementById('insp-pos');
+    if (!selected) {
+      nameEl.textContent = 'Ningún objeto seleccionado';
+      hintEl.style.display = 'block';
+      sizeEl.textContent = '';
+      relEl.textContent = '';
+      posEl.textContent = '';
+      return;
+    }
+    hintEl.style.display = 'none';
+    var u = selected.userData;
+    var e = u.extents || [0, 0, 0];
+    var room = fromThree(selected.position);
+    nameEl.textContent = u.name + ' — ' + u.label;
+    sizeEl.textContent = 'Tamaño (fijo): ' + fmt(e[0]) + ' × ' + fmt(e[1]) + ' × ' + fmt(e[2]) + ' m';
+    relEl.textContent = 'Respecto del recinto: ' +
+      Math.round(e[0] / L * 100) + '% del largo (3,20), ' +
+      Math.round(e[1] / W * 100) + '% del ancho (3,00), ' +
+      Math.round(e[2] / H * 100) + '% del alto (3,00)';
+    posEl.textContent = 'Centro: X ' + fmt(room[0]) + '   Y ' + fmt(room[1]) + '   Z ' + fmt(room[2]) + ' m';
+  }
+
+  function restoreMesh(mesh) {
+    mesh.position.copy(mesh.userData.origin);
+    if (mesh.userData.originQ) mesh.quaternion.copy(mesh.userData.originQ);
+  }
+
+  document.getElementById('btn-reset-one').addEventListener('click', function () {
+    if (selected) { restoreMesh(selected); updateInspector(); }
+  });
+  document.getElementById('btn-reset-all').addEventListener('click', function () {
+    movable.forEach(restoreMesh);
+    updateInspector();
+  });
+  document.getElementById('chk-snap').addEventListener('change', function (e) {
+    snapOn = e.target.checked;
+    if (transform) transform.setTranslationSnap(snapOn ? 0.05 : null);
+  });
+  document.getElementById('chk-tags').addEventListener('change', function (e) {
+    followLabs.forEach(function (lb) { lb.el.style.visibility = e.target.checked ? 'visible' : 'hidden'; });
+  });
 
   function goView(v) {
     if (v === 'zoomin' || v === 'zoomout') {
@@ -223,14 +489,21 @@ const BOXES = __BOXES__;
     b.addEventListener('click', function () { goView(b.dataset.v); });
   });
 
-  function refreshLabels() {
+  function projectEl(el, vec) {
     var r = stage.getBoundingClientRect();
-    labs.forEach(function (lb) {
-      var v = lb.pos.clone().project(cam);
-      if (v.z > 1) { lb.el.style.display = 'none'; return; }
-      lb.el.style.display = 'block';
-      lb.el.style.left = (r.left + (v.x + 1) * r.width / 2) + 'px';
-      lb.el.style.top = (r.top + (1 - v.y) * r.height / 2) + 'px';
+    var v = vec.clone().project(cam);
+    if (v.z > 1) { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    el.style.left = ((v.x + 1) * r.width / 2) + 'px';
+    el.style.top = ((1 - v.y) * r.height / 2) + 'px';
+  }
+
+  function refreshLabels() {
+    labs.forEach(function (lb) { projectEl(lb.el, lb.pos); });
+    followLabs.forEach(function (lb) {
+      var p = new THREE.Vector3();
+      lb.mesh.getWorldPosition(p);
+      projectEl(lb.el, p);
     });
   }
   controls.addEventListener('change', refreshLabels);
@@ -239,23 +512,75 @@ const BOXES = __BOXES__;
   var raycaster = new THREE.Raycaster();
   var pointer = new THREE.Vector2();
   var tooltip = document.getElementById('tooltip');
+  var downPt = null;
 
-  renderer.domElement.addEventListener('pointermove', function (e) {
+  function setPointer(e) {
     var r = stage.getBoundingClientRect();
     pointer.x = ((e.clientX - r.left) / r.width) * 2 - 1;
     pointer.y = -((e.clientY - r.top) / r.height) * 2 + 1;
     raycaster.setFromCamera(pointer, cam);
+  }
+
+  renderer.domElement.addEventListener('pointermove', function (e) {
+    setPointer(e);
     var hit = raycaster.intersectObjects(meshes)[0];
-    if (hit) {
+    if (hit && hit.object.userData.type !== 'wall') {
       var u = hit.object.userData;
-      var sizes = u.extents.map(function (v) { return (Math.round(v * 100) / 100) + ' m'; }).join(' × ');
+      var root = pickRoot(hit.object);
+      var sizes = u.note || (u.extents ? u.extents.map(function (v) { return fmt(v) + ' m'; }).join(' × ') : '');
       tooltip.style.display = 'block';
-      tooltip.textContent = u.label + '  ·  ' + sizes;
-      meshes.forEach(function (m) { m.material.emissive.setHex(m === hit.object ? 0x223344 : 0x000000); });
+      tooltip.textContent = ((root && root.userData.name) ? root.userData.name + ' · ' : '') + u.label + (sizes ? '  ·  ' + sizes : '');
+      meshes.forEach(function (m) {
+        if (selected && (m === selected || m.parent === selected)) return;
+        m.material.emissive.setHex(m === hit.object ? 0x223344 : 0x000000);
+      });
     } else {
       tooltip.style.display = 'none';
-      meshes.forEach(function (m) { m.material.emissive.setHex(0x000000); });
+      meshes.forEach(function (m) {
+        if (selected && (m === selected || m.parent === selected)) return;
+        m.material.emissive.setHex(0x000000);
+      });
     }
+  });
+
+  renderer.domElement.addEventListener('pointerdown', function (e) {
+    downPt = { x: e.clientX, y: e.clientY };
+  });
+  renderer.domElement.addEventListener('pointerup', function (e) {
+    if (ignoreClick) { ignoreClick = false; downPt = null; return; }
+    if (!downPt) return;
+    var dist = Math.hypot(e.clientX - downPt.x, e.clientY - downPt.y);
+    downPt = null;
+    if (dist > 6) return;
+    setPointer(e);
+    var hits = raycaster.intersectObjects(movable, true);
+    var root = null;
+    for (var i = 0; i < hits.length; i++) {
+      root = pickRoot(hits[i].object);
+      if (root) break;
+    }
+    selectMesh(root);
+  });
+
+  addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { selectMesh(null); return; }
+    if (!selected) return;
+    var step = e.shiftKey ? 0.20 : 0.05;
+    var room = fromThree(selected.position);
+    var moved = true;
+    if (e.key === 'ArrowLeft') room[0] -= step;
+    else if (e.key === 'ArrowRight') room[0] += step;
+    else if (e.key === 'ArrowUp') room[1] += step;
+    else if (e.key === 'ArrowDown') room[1] -= step;
+    else if (e.key === 'PageUp') room[2] += step;
+    else if (e.key === 'PageDown') room[2] -= step;
+    else moved = false;
+    if (!moved) return;
+    e.preventDefault();
+    var t = R(room);
+    selected.position.set(t[0], t[1], t[2]);
+    if (snapOn) snapMesh(selected);
+    updateInspector();
   });
 
   addEventListener('resize', function () {
@@ -268,6 +593,7 @@ const BOXES = __BOXES__;
   (function animate() {
     requestAnimationFrame(animate);
     controls.update();
+    refreshLabels();
     renderer.render(escena, cam);
   })();
 })();
@@ -280,4 +606,4 @@ HTML_DOC = HTML_DOC.replace("__BOXES__", DATA)
 with open(os.path.join(BASE, "render.html"), "w") as f:
     f.write(HTML_DOC)
 
-print("render.html regenerado (ejes corregidos a Y-up)")
+print("render.html regenerado (mover objetos + prismas + tapas agrupadas)")
