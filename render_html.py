@@ -282,7 +282,7 @@ const BOXES = __BOXES__;
     mesh.userData.note = b.shape === 'prism' ? 'prisma 0,60 × 0,60 × 1,20 m' : null;
     mesh.userData.origin = mesh.position.clone();
     mesh.userData.originQ = mesh.quaternion.clone();
-    if (b.type !== 'wall') addEdges(mesh, geo);
+    if (b.type !== 'wall' && b.shape !== 'prism') addEdges(mesh, geo);
     meshes.push(mesh);
 
     if (b.gid) {
@@ -317,6 +317,7 @@ const BOXES = __BOXES__;
       if (ch.userData && ch.userData.bakedWorld && ch.geometry) {
         ch.geometry.translate(-center.x, -center.y, -center.z);
         ch.geometry.computeVertexNormals();
+        addEdges(ch, ch.geometry);
       } else {
         ch.position.sub(center);
       }
