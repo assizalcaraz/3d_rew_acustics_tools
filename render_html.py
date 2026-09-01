@@ -52,11 +52,12 @@ HTML_DOC = r"""<!DOCTYPE html>
 <meta charset="utf-8">
 <title>Modelo acústico - Opción B</title>
 <style>
-  html,body{margin:0;height:100%;font-family:system-ui,sans-serif;background:#f4f5f7}
+  html,body{margin:0;height:100%;width:100%;font-family:system-ui,sans-serif;background:#f4f5f7;overflow:hidden}
   html.embed #side{display:none}
-  html.embed #app{display:block;height:100%}
-  #app{display:flex;height:100%}
-  #stage{position:relative;flex:1;min-width:0}
+  html.embed #app{display:block;height:100%;width:100%}
+  html.embed #stage{position:absolute;inset:0;width:100%;height:100%}
+  #app{display:flex;height:100%;width:100%}
+  #stage{position:relative;flex:1;min-width:0;min-height:0}
   canvas{display:block}
   #side{width:300px;flex:none;padding:10px 14px 14px;overflow-y:auto;background:#e9ecf2;
         border-left:1px solid #d7dbe4;box-sizing:border-box}
@@ -149,9 +150,9 @@ HTML_DOC = r"""<!DOCTYPE html>
   </div>
 </div>
 
-<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/controls/TransformControls.js"></script>
+<script src="vendor/three.min.js"></script>
+<script src="vendor/OrbitControls.js"></script>
+<script src="vendor/TransformControls.js"></script>
 <script>
 if (location.search.indexOf('embed=1') !== -1) {
   document.documentElement.classList.add('embed');
@@ -166,7 +167,7 @@ const BOXES = __BOXES__;
     errEl.style.display = 'block';
     errEl.textContent = 'No se pudo iniciar el visor: ' + m;
   }
-  if (!window.THREE) return fail('no se pudo cargar three.js desde la CDN. Necesita internet.');
+  if (!window.THREE) return fail('no se pudo cargar three.js (vendor/three.min.js).');
   const test = document.createElement('canvas');
   const gl = test.getContext('webgl') || test.getContext('experimental-webgl');
   if (!gl) return fail('WebGL no disponible en este navegador.');
@@ -174,11 +175,19 @@ const BOXES = __BOXES__;
   const escena = new THREE.Scene();
   escena.background = new THREE.Color(0xf4f5f7);
 
-  const cam = new THREE.PerspectiveCamera(50, stage.clientWidth / stage.clientHeight, 0.05, 100);
+  const cam = new THREE.PerspectiveCamera(50, 1, 0.05, 100);
   const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setSize(stage.clientWidth, stage.clientHeight);
+  renderer.setPixelRatio(window.devicePixelRatio || 1);
   stage.appendChild(renderer.domElement);
+  function fitRenderer() {
+    var w = stage.clientWidth || stage.offsetWidth;
+    var h = stage.clientHeight || stage.offsetHeight;
+    if (!w || !h) return;
+    cam.aspect = w / h;
+    cam.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  }
+  fitRenderer();
 
   escena.add(new THREE.HemisphereLight(0xffffff, 0xcccccc, 0.9));
   var dl = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -585,11 +594,10 @@ const BOXES = __BOXES__;
   });
 
   addEventListener('resize', function () {
-    cam.aspect = stage.clientWidth / stage.clientHeight;
-    cam.updateProjectionMatrix();
-    renderer.setSize(stage.clientWidth, stage.clientHeight);
+    fitRenderer();
     refreshLabels();
   });
+  requestAnimationFrame(function () { fitRenderer(); refreshLabels(); });
 
   (function animate() {
     requestAnimationFrame(animate);
