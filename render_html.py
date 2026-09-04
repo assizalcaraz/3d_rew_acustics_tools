@@ -53,9 +53,6 @@ HTML_DOC = r"""<!DOCTYPE html>
 <title>Modelo acústico - Opción B</title>
 <style>
   html,body{margin:0;height:100%;width:100%;font-family:system-ui,sans-serif;background:#f4f5f7;overflow:hidden}
-  html.embed #side{display:none}
-  html.embed #app{display:block;height:100%;width:100%}
-  html.embed #stage{position:absolute;inset:0;width:100%;height:100%}
   #app{display:flex;height:100%;width:100%}
   #stage{position:relative;flex:1;min-width:0;min-height:0}
   canvas{display:block}
@@ -100,6 +97,14 @@ HTML_DOC = r"""<!DOCTYPE html>
   .lbl.tag{font-size:11px;background:rgba(255,255,255,.9);padding:1px 5px;border-radius:4px;
        border:1px solid #cfd4de;font-weight:700;text-shadow:none}
   .lbl.tag.on{background:#1f2a44;color:#fff;border-color:#1f2a44}
+  @media (max-width: 720px) {
+    html.embed #info,
+    html.embed #inspector,
+    html.embed #hint,
+    html.embed #side { display: none !important; }
+    html.embed #views { max-width: calc(100% - 16px); top: 8px; right: 8px; }
+    html.embed #views button { padding: 5px 8px; font-size: 11px; }
+  }
 </style>
 </head>
 <body>
@@ -156,8 +161,6 @@ HTML_DOC = r"""<!DOCTYPE html>
 <script>
 if (location.search.indexOf('embed=1') !== -1) {
   document.documentElement.classList.add('embed');
-  var side = document.getElementById('side');
-  if (side) side.style.display = 'none';
 }
 const BOXES = __BOXES__;
 (function () {
