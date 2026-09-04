@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "meta": {
+    "proyecto": "Relevamiento REW — sala de monitoreo",
+    "fecha": null,
+    "notas": "Plantilla: dimensiones preliminares; aberturas/elementos/posiciones vacías hasta medir."
+  },
+  "geometria": {
+    "ancho_m": 3.0,
+    "profundidad_m": 3.2,
+    "alto_m": 4.0,
+    "preliminar": {
+      "ancho_m": true,
+      "profundidad_m": true,
+      "alto_m": true
+    },
+    "nota_alto": "Alto REW preliminar 4,00 m. El modelo 3D de tratamiento sigue en H=3,00 m."
+  },
+  "umbrales": {
+    "d_matriz_m": 0.2,
+    "d_corona_m": 0.4,
+    "dz_vertical_m": 0.2,
+    "dist_objetivo_triangulo_m": 1.0,
+    "margen_equilatero_m": 0.05,
+    "min_pared_m": 0.3,
+    "min_monitor_m": 0.4,
+    "min_abertura_m": 0.4,
+    "min_obstaculo_m": 0.25,
+    "c_sonido_ms": 343,
+    "modos_orden_max": 10,
+    "modos_agrupamiento_hz": 3
+  },
+  "aberturas": [
+    {
+      "id": "A01",
+      "nombre": "Puerta lateral doble",
+      "pared": "derecha",
+      "ancho": null,
+      "alto": null,
+      "dist_esquina_a": null,
+      "dist_esquina_b": null,
+      "antepecho": null,
+      "notas": "Medidas vacías hasta relevar — no inventar ancho."
+    },
+    {
+      "id": "A02",
+      "nombre": "Puerta trasera simple",
+      "pared": "trasera",
+      "ancho": null,
+      "alto": null,
+      "dist_esquina_a": null,
+      "dist_esquina_b": null,
+      "antepecho": null,
+      "notas": "Medidas vacías hasta relevar."
+    }
+  ],
+  "elementos": [
+    { "id": "E01", "nombre": "Escritorio", "x": null, "y": null, "z": null, "ancho": null, "profundidad": null, "alto": null },
+    { "id": "E02", "nombre": "Silla", "x": null, "y": null, "z": null, "ancho": null, "profundidad": null, "alto": null },
+    { "id": "E03", "nombre": "Rack", "x": null, "y": null, "z": null, "ancho": null, "profundidad": null, "alto": null }
+  ],
+  "monitoreo": {
+    "L": { "x": null, "y": null, "z": null },
+    "R": { "x": null, "y": null, "z": null },
+    "operador": { "x": null, "y": null, "z": null },
+    "nota": "Posiciones vacías hasta relevar. El layout 3D actual es hipótesis, no dato medido."
+  },
+  "protocolo": {
+    "etapas": [
+      { "id": 0, "nombre": "Preparación / checklist previo", "hecho": false },
+      { "id": 1, "nombre": "Geometría y aberturas", "hecho": false },
+      { "id": 2, "nombre": "Monitoreo y triángulo", "hecho": false },
+      { "id": 3, "nombre": "Calibración REW", "hecho": false },
+      { "id": 4, "nombre": "Barridos M1–M5 (y opcionales)", "hecho": false },
+      { "id": 5, "nombre": "Comparativa / repeticiones", "hecho": false },
+      { "id": 6, "nombre": "Cierre y backup de archivos", "hecho": false }
+    ],
+    "config_rew": {
+      "mic": "",
+      "calibracion": "",
+      "sample_rate": "",
+      "sweep": "",
+      "nivel": ""
+    },
+    "nomenclatura": "01_ACTUAL_L_M1",
+    "checklist_campo": [
+      { "item": "Cinta métrica / láser", "ok": false },
+      { "item": "Mic de medición + pie", "ok": false },
+      { "item": "Interfaz / phantom", "ok": false },
+      { "item": "Laptop con REW", "ok": false },
+      { "item": "Archivo de calibración del mic", "ok": false },
+      { "item": "Extensión / zapatilla", "ok": false },
+      { "item": "Planos / fotos de referencia", "ok": false }
+    ]
+  },
+  "coords_leyenda": {
+    "origen": "Esquina frontal izquierda (REW)",
+    "x": "Izquierda → derecha (ancho)",
+    "y": "Frente → fondo (profundidad)",
+    "z": "Piso → techo",
+    "conversion_app": "Frente REW Y=0 ↔ app X=L; Izquierda REW X=0 ↔ app Y=W"
+  }
+}
